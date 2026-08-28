@@ -43,7 +43,7 @@ export function Login() {
       .finally(() => {
         setLoadingConfig(false);
       });
-  }, []);
+  }, []); // <-- Removido o setPrimaryColor daqui de dentro
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,18 +128,16 @@ export function Login() {
                 <img
                   src={logoUrl}
                   alt="Logo"
-                  className="w-25 h-25 object-contain"
+                  className="w-24 h-24 object-contain"
                 />
               )}
             </div>
 
-            {/* Título dinâmico (Nome do App) */}
             <h1 className="text-4xl font-bold tracking-tight">
               {loadingConfig ? 'Carregando...' : nomeApp}
               <span style={{ color: 'var(--primary-color)' }}>.</span>
             </h1>
 
-            {/* Subtítulo dinâmico (Slogan) */}
             <p
               className={`text-lg mt-2 px-2 select-none ${
                 theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'
