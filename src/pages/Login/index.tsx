@@ -12,7 +12,7 @@ export function Login() {
   // Estados vindos da API com valores iniciais seguros para PWA
   const [nomeApp, setNomeApp] = useState('Peskisa');
   const [sloganApp, setSloganApp] = useState(
-    'Entre com suas credenciais para acessar o painel 2'
+    'Entre com suas credenciais para acessar o painel'
   );
   const [logoPadrao, setLogoPadrao] = useState<string | null>(null);
   const [iconeApp, setIconeApp] = useState<string | null>(null); // <--- Novo estado para o ícone
@@ -142,7 +142,7 @@ export function Login() {
           {/* Logo e Títulos */}
           <div className="flex flex-col items-center mb-8 text-center">
             <div className="mb-4 flex items-center justify-center min-h-[4rem]">
-              <img src={logoUrl} alt="Logo" className="w-60 object-contain" />
+              <img src={logoUrl} alt="Logo" className="w-30 object-contain" />
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight">
