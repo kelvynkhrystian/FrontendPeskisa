@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Sun, Moon, ArrowRight } from 'lucide-react';
-import localLogo from '../../assets/logo.png';
+import localLogo from '../../assets/logo2.png';
 import { api } from '../../services/api';
 
 export function Login() {
