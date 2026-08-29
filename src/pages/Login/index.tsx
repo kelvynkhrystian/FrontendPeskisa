@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Sun, Moon, ArrowRight, Loader2 } from 'lucide-react';
-import fallbackLogo from '../../assets/react.svg';
+import { Sun, Moon, ArrowRight } from 'lucide-react';
+import localLogo from '../../assets/logo.png';
 import { api } from '../../services/api';
 
 export function Login() {
@@ -9,13 +9,13 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Estados vindos da API com valores iniciais seguros
+  // Estados vindos da API com valores iniciais seguros para PWA
   const [nomeApp, setNomeApp] = useState('Peskisa');
   const [sloganApp, setSloganApp] = useState(
-    'Entre com suas credenciais para acessar o painel'
+    'Entre com suas credenciais para acessar o painel 2'
   );
   const [logoPadrao, setLogoPadrao] = useState<string | null>(null);
-  const [loadingConfig, setLoadingConfig] = useState(true);
+  const [iconeApp, setIconeApp] = useState<string | null>(null); // <--- Novo estado para o ícone
 
   useEffect(() => {
     api
@@ -32,28 +32,48 @@ export function Login() {
             setSloganApp(response.data.slogan_app);
           }
           if (response.data.logo_padrao) {
-            console.log('Logo encontrada:', response.data.logo_padrao);
             setLogoPadrao(response.data.logo_padrao);
+          }
+          // Pega o ícone da aba vindo da API, se houver
+          if (response.data.icone) {
+            setIconeApp(response.data.icone);
           }
         }
       })
       .catch((error) => {
-        console.error('Erro ao buscar configurações na API:', error);
-      })
-      .finally(() => {
-        setLoadingConfig(false);
+        console.error(
+          'Erro ao buscar configurações na API (usando padrão PWA):',
+          error
+        );
       });
-  }, []); // <-- Removido o setPrimaryColor daqui de dentro
+  }, []);
+
+  // Atualiza o Favicon da aba do navegador dinamicamente
+  useEffect(() => {
+    const faviconUrl = iconeApp
+      ? `${import.meta.env.VITE_API_URL}${iconeApp.startsWith('/') ? '' : '/'}${iconeApp}`
+      : localLogo;
+
+    let link: HTMLLinkElement | null =
+      document.querySelector("link[rel*='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.type = 'image/x-icon';
+      link.rel = 'shortcut icon';
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    link.href = faviconUrl;
+  }, [iconeApp]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     alert('Login efetuado com sucesso!');
   };
 
-  // Monta a URL da logo de forma limpa usando a variável de ambiente e tratando a barra inicial
+  // Monta a URL da logo do card
   const logoUrl = logoPadrao
     ? `${import.meta.env.VITE_API_URL}${logoPadrao.startsWith('/') ? '' : '/'}${logoPadrao}`
-    : fallbackLogo;
+    : localLogo;
 
   return (
     <div
@@ -122,20 +142,14 @@ export function Login() {
           {/* Logo e Títulos */}
           <div className="flex flex-col items-center mb-8 text-center">
             <div className="mb-4 flex items-center justify-center min-h-[4rem]">
-              {loadingConfig ? (
-                <Loader2 className="w-10 h-10 animate-spin text-zinc-400" />
-              ) : (
-                <img
-                  src={logoUrl}
-                  alt="Logo"
-                  className="w-24 h-24 object-contain"
-                />
-              )}
+              <img src={logoUrl} alt="Logo" className="w-60 object-contain" />
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight">
-              {loadingConfig ? 'Carregando...' : nomeApp}
-              <span style={{ color: 'var(--primary-color)' }}>.</span>
+              {nomeApp}
+              {nomeApp === 'Peskisa' && (
+                <span style={{ color: '#f97316' }}>.</span>
+              )}
             </h1>
 
             <p
@@ -143,7 +157,7 @@ export function Login() {
                 theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'
               }`}
             >
-              {loadingConfig ? 'Buscando informações...' : sloganApp}
+              {sloganApp}
             </p>
           </div>
 
@@ -202,6 +216,16 @@ export function Login() {
               <ArrowRight size={18} />
             </button>
           </form>
+
+          {/* Rodapé */}
+          <div className="mt-8 pt-4 text-center text-xs space-y-1 select-none border-t border-zinc-500/10">
+            <p className={theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'}>
+              Versão 2.0.1 • {nomeApp}
+            </p>
+            <p className={theme === 'dark' ? 'text-zinc-600' : 'text-zinc-500'}>
+              Desenvolvido por kelvynk
+            </p>
+          </div>
         </div>
       </main>
     </div>
