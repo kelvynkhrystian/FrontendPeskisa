@@ -2,8 +2,8 @@ import { createBrowserRouter } from 'react-router-dom';
 
 // Páginas ativas
 import { Login } from '../pages/Login';
-// import { Dashboard } from '../pages/Dashboard';
-// import { DashboardUser } from '../pages/DashboardUser';
+import { Dashboard } from '../pages/admin/Dashboard';
+import { DashboardUser } from '../pages/user/DashboardUser';
 
 // Outras páginas (comentadas por enquanto)
 // import { Config } from '../pages/Config'
@@ -20,11 +20,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/admin/dashboard',
-    // element: <Dashboard />,
+    element: <Dashboard />,
   },
   {
     path: '/user/dashboard',
-    // element: <DashboardUser />,
+    element: <DashboardUser />,
   },
 
   /* --- ROTAS FUTURAS (Descomente quando for usar) ---
