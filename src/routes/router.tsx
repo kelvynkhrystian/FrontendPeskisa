@@ -8,7 +8,7 @@ import { DashboardUser } from '../pages/user/DashboardUser';
 // Outras páginas (comentadas por enquanto)
 // import { Config } from '../pages/Config'
 // import { ConfigUser } from '../pages/ConfigUser'
-// import { NotFound } from '../pages/NotFound'
+import { NotFound } from '../pages/NotFound';
 // import { Pesquisas } from '../pages/Pesquisas'
 // import { PesquisasUser } from '../pages/PesquisasUser'
 // import { Sincronizar } from '../pages/Sincronizar'
@@ -48,9 +48,11 @@ export const router = createBrowserRouter([
     path: '/sincronizar',
     element: <Sincronizar />,
   },
+
+  -------------------------------------------------- */
+
   {
     path: '*',
     element: <NotFound />,
   },
-  -------------------------------------------------- */
 ]);
