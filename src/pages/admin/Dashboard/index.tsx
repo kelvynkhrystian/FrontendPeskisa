@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import {
   CheckCircle2,
@@ -11,9 +11,13 @@ import { AdminSidebar } from '../../../components/Sidebar/AdminSidebar';
 import { Header } from '../../../components/Header/Header';
 
 export function Dashboard() {
-  const { theme } = useTheme();
+  const { theme, nomeApp } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = `Painel - ${nomeApp}`;
+  }, [nomeApp]);
 
   return (
     <div

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import {
   CheckCircle2,
@@ -11,9 +11,13 @@ import { UserSidebar } from '../../../components/Sidebar/UserSidebar';
 import { Header } from '../../../components/Header/Header';
 
 export function DashboardUser() {
-  const { theme } = useTheme();
+  const { theme, nomeApp } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = `Painel - ${nomeApp}`;
+  }, [nomeApp]);
 
   const stats = {
     pesquisasDisponiveis: 4,
