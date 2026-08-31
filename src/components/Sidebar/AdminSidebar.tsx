@@ -10,6 +10,9 @@ import {
   Search,
   Menu,
   X,
+  Sun,
+  Moon,
+  Palette,
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -26,7 +29,7 @@ export function AdminSidebar({
   mobileMenuOpen,
   setMobileMenuOpen,
 }: AdminSidebarProps) {
-  const { theme } = useTheme();
+  const { theme, toggleTheme, setPrimaryColor } = useTheme();
   const [logoPadrao, setLogoPadrao] = useState<string | null>(null);
 
   useEffect(() => {
@@ -147,7 +150,58 @@ export function AdminSidebar({
       </div>
 
       {/* Rodapé da Sidebar */}
-      <div className="p-3 border-t border-zinc-500/15">
+      <div className="p-3 border-t border-zinc-500/15 space-y-3">
+        {/* Bloco de Cores e Tema: Visível APENAS no mobile (lg:hidden) */}
+        {sidebarOpen ? (
+          <div className="p-3 rounded-xl bg-zinc-500/5 border border-zinc-500/10 space-y-2.5 lg:hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1.5">
+                <Palette size={14} /> Aparência
+              </span>
+              <button
+                onClick={toggleTheme}
+                className="p-1.5 rounded-lg bg-zinc-500/10 hover:bg-zinc-500/25 transition-all text-zinc-300 cursor-pointer"
+                title="Alternar Tema"
+              >
+                {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2 pt-1">
+              <button
+                onClick={() => setPrimaryColor('orange')}
+                className="h-6 rounded-lg bg-orange-500 hover:opacity-95 hover:scale-[1.02] transition-all cursor-pointer shadow-sm"
+                title="Laranja"
+              />
+              <button
+                onClick={() => setPrimaryColor('blue')}
+                className="h-6 rounded-lg bg-blue-600 hover:opacity-95 hover:scale-[1.02] transition-all cursor-pointer shadow-sm"
+                title="Azul"
+              />
+              <button
+                onClick={() => setPrimaryColor('purple')}
+                className="h-6 rounded-lg bg-purple-600 hover:opacity-95 hover:scale-[1.02] transition-all cursor-pointer shadow-sm"
+                title="Roxo"
+              />
+              <button
+                onClick={() => setPrimaryColor('emerald')}
+                className="h-6 rounded-lg bg-emerald-600 hover:opacity-95 hover:scale-[1.02] transition-all cursor-pointer shadow-sm"
+                title="Esmeralda"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 py-1 lg:hidden">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl bg-zinc-500/10 hover:bg-zinc-500/20 text-zinc-300 cursor-pointer"
+              title="Alternar Tema"
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+          </div>
+        )}
+
         <a
           href="/"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-red-400 hover:bg-red-500/10 transition-colors"
