@@ -25,35 +25,48 @@ export function Config() {
     'geral'
   );
 
-  // Estados do Menu Lateral
+  // Estados do Menu Lateral (Sidebar / Mobile)
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // ID do usuário logado (capturado via API)
+  // ID do usuário logado (capturado via API de perfil)
   const [userId, setUserId] = useState<number | null>(null);
 
-  // Estados dos campos Gerais
-  const [appName, setAppName] = useState(nomeApp || '');
+  // Estados dos campos Gerais da aplicação
+  const [appName, setAppName] = useState(nomeApp || 'Peskisa');
   const [appSlogan, setAppSlogan] = useState('Pesquisas de porta em porta');
   const [appPhone, setAppPhone] = useState('98991054292');
 
-  // Estados de Credenciais
+  // Estados de Imagens (Arquivos novos selecionados e URLs vindas do DB)
+  const [iconeFile, setIconeFile] = useState<File | null>(null);
+  const [logoPadraoFile, setLogoPadraoFile] = useState<File | null>(null);
+  const [logoHorizontalFile, setLogoHorizontalFile] = useState<File | null>(
+    null
+  );
+
+  const [iconeUrl, setIconeUrl] = useState<string | null>(null);
+  const [logoPadraoUrl, setLogoPadraoUrl] = useState<string | null>(null);
+  const [logoHorizontalUrl, setLogoHorizontalUrl] = useState<string | null>(
+    null
+  );
+
+  // Estados de Credenciais (E-mail e Senha)
   const [currentEmail, setCurrentEmail] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [emailPassword, setEmailPassword] = useState('');
+  const [emailPassword, setEmailPassword] = useState(''); // Senha atual para confirmar alteração de e-mail
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState(''); // Senha atual para bcrypt
+  const [newPassword, setNewPassword] = useState(''); // Nova senha
+  const [confirmPassword, setConfirmPassword] = useState(''); // Confirmação da nova senha
 
-  // Carrega o título e os dados do usuário logado ao abrir a tela
+  // 1. Carrega dados do usuário logado e as configurações salvas no banco ao abrir a página
   useEffect(() => {
     document.title = `Configurações - ${nomeApp || 'Peskisa'}`;
 
+    // Busca dados do usuário admin autenticado
     async function loadAdminData() {
       try {
         const data = await userService.getMe();
-        // O backend geralmente retorna o objeto do usuário dentro de 'user' ou direto
         const user = data.user || data;
         if (user && user.id) {
           setUserId(user.id);
@@ -65,10 +78,61 @@ export function Config() {
       }
     }
 
+    // Busca as configurações gerais do sistema
+    async function loadSystemConfig() {
+      try {
+        const data = await configService.getConfig();
+        const config = data.config || data;
+        if (config) {
+          if (config.nome_app) setAppName(config.nome_app);
+          if (config.slogan_app) setAppSlogan(config.slogan_app);
+          if (config.telefone_suporte) setAppPhone(config.telefone_suporte);
+          if (config.icone_app) setIconeUrl(config.icone_app);
+          if (config.logo_padrao) setLogoPadraoUrl(config.logo_padrao);
+          if (config.logo_horizontal)
+            setLogoHorizontalUrl(config.logo_horizontal);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações do sistema:', error);
+      }
+    }
+
     loadAdminData();
+    loadSystemConfig();
   }, [nomeApp]);
 
-  // Salvar Configurações Gerais
+  // Função auxiliar para montar a URL correta das imagens vindas do backend
+  const getImageUrl = (path: string | null) => {
+    if (!path) return null;
+    if (path.startsWith('blob:')) return path;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333';
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
+
+  // Manipulador de seleção de arquivos de imagem com preview instantâneo
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: 'icone' | 'padrao' | 'horizontal'
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const previewUrl = URL.createObjectURL(file);
+
+      if (type === 'icone') {
+        setIconeFile(file);
+        setIconeUrl(previewUrl);
+      } else if (type === 'padrao') {
+        setLogoPadraoFile(file);
+        setLogoPadraoUrl(previewUrl);
+      } else if (type === 'horizontal') {
+        setLogoHorizontalFile(file);
+        setLogoHorizontalUrl(previewUrl);
+      }
+      toast.success('Imagem selecionada com sucesso!');
+    }
+  };
+
+  // 2. Salvar Configurações Gerais e Envio de Imagens via FormData
   const handleSaveGeral = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!appName || !appPhone || !appSlogan) {
@@ -82,6 +146,11 @@ export function Config() {
       formData.append('slogan_app', appSlogan);
       formData.append('telefone_suporte', appPhone);
 
+      if (iconeFile) formData.append('icone_app', iconeFile);
+      if (logoPadraoFile) formData.append('logo_padrao', logoPadraoFile);
+      if (logoHorizontalFile)
+        formData.append('logo_horizontal', logoHorizontalFile);
+
       await configService.updateConfig(formData);
       toast.success('Configurações gerais salvas com sucesso!');
     } catch (error: unknown) {
@@ -92,7 +161,7 @@ export function Config() {
     }
   };
 
-  // Atualizar E-mail
+  // 3. Função para Atualizar E-mail (Enviando a senha atual para validação de segurança no backend)
   const handleUpdateEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail || !emailPassword) {
@@ -106,19 +175,26 @@ export function Config() {
     }
 
     try {
-      await userService.updateUser(userId, { email: newEmail });
+      // Enviando o novo e-mail e a senha atual para o backend verificar via bcrypt/token
+      await userService.updateUser(userId, {
+        email: newEmail,
+        senha_atual: emailPassword, // Campo validado no backend
+      });
+
       toast.success('E-mail atualizado com sucesso!');
       setCurrentEmail(newEmail);
       setNewEmail('');
       setEmailPassword('');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
-      const errorMsg = err.response?.data?.error || 'Erro ao atualizar e-mail';
+      const errorMsg =
+        err.response?.data?.error ||
+        'Erro ao atualizar e-mail. Verifique sua senha atual.';
       toast.error(errorMsg);
     }
   };
 
-  // Atualizar Senha
+  // 4. Função para Atualizar Senha (Enviando senha atual e nova senha para validação via bcrypt)
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -137,15 +213,21 @@ export function Config() {
     }
 
     try {
-      // Ajuste para o campo 'senha' que o seu banco/modelo espera
-      await userService.updateUser(userId, { senha: newPassword });
+      // Enviando a senha atual (para o bcrypt conferir) e a nova senha
+      await userService.updateUser(userId, {
+        senha_atual: currentPassword,
+        senha: newPassword,
+      });
+
       toast.success('Senha alterada com sucesso!');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
-      const errorMsg = err.response?.data?.error || 'Erro ao alterar senha';
+      const errorMsg =
+        err.response?.data?.error ||
+        'Erro ao alterar senha. Verifique se a senha atual está correta.';
       toast.error(errorMsg);
     }
   };
@@ -158,7 +240,6 @@ export function Config() {
           : 'bg-[#f4f4f5] text-[#18181b]'
       }`}
     >
-      {/* Container de Alertas Toast */}
       <Toaster position="top-right" reverseOrder={false} />
 
       <AdminSidebar
@@ -272,7 +353,7 @@ export function Config() {
             </button>
           </div>
 
-          {/* CONTEÚDO DA ABA: GERAL */}
+          {/* ABA: GERAL */}
           {activeTab === 'geral' && (
             <form onSubmit={handleSaveGeral} className="space-y-6">
               <div
@@ -296,7 +377,7 @@ export function Config() {
                       type="text"
                       value={appName}
                       onChange={(e) => setAppName(e.target.value)}
-                      placeholder="Ex: Vibe Opinião"
+                      placeholder="Ex: Peskisa"
                       className={`w-full px-4 py-3 rounded-xl text-sm outline-none transition-all border ${
                         theme === 'dark'
                           ? 'bg-[#121214] border-[#29292e] text-white focus:border-zinc-500'
@@ -307,13 +388,13 @@ export function Config() {
 
                   <div className="space-y-2">
                     <label className="text-xs font-semibold tracking-wide uppercase opacity-80">
-                      Telefone de Contato
+                      Telefone de Contato (WhatsApp)
                     </label>
                     <input
                       type="text"
                       value={appPhone}
                       onChange={(e) => setAppPhone(e.target.value)}
-                      placeholder="(99) 99999-9999"
+                      placeholder="98991054292"
                       className={`w-full px-4 py-3 rounded-xl text-sm outline-none transition-all border ${
                         theme === 'dark'
                           ? 'bg-[#121214] border-[#29292e] text-white focus:border-zinc-500'
@@ -341,7 +422,7 @@ export function Config() {
                 </div>
               </div>
 
-              {/* Seção de Imagens / Logos */}
+              {/* Seção de Imagens e Logos */}
               <div
                 className={`p-6 md:p-8 rounded-2xl border shadow-lg space-y-6 transition-all ${
                   theme === 'dark'
@@ -355,57 +436,99 @@ export function Config() {
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Ícone do App */}
                   <div
                     className={`p-5 rounded-xl border flex flex-col items-center justify-between gap-4 transition-all ${theme === 'dark' ? 'bg-[#121214] border-[#29292e]' : 'bg-zinc-50 border-zinc-200'}`}
                   >
                     <span className="text-xs font-bold uppercase tracking-wider text-center opacity-70">
                       Ícone do App
                     </span>
-                    <div className="w-24 h-24 rounded-xl border border-dashed flex items-center justify-center p-2 border-zinc-500/30">
-                      <Smartphone size={36} className="opacity-40" />
+                    <div className="w-24 h-24 rounded-xl border border-dashed flex items-center justify-center p-2 border-zinc-500/30 overflow-hidden bg-black/20">
+                      {iconeUrl ? (
+                        <img
+                          src={getImageUrl(iconeUrl) || ''}
+                          alt="Ícone"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Smartphone size={36} className="opacity-40" />
+                      )}
                     </div>
                     <label
                       className="w-full py-2.5 px-4 rounded-xl text-xs font-medium text-white text-center cursor-pointer shadow-md transition-all active:scale-95"
                       style={{ backgroundColor: 'var(--primary-color)' }}
                     >
                       Selecionar Arquivo
-                      <input type="file" className="hidden" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e, 'icone')}
+                      />
                     </label>
                   </div>
 
+                  {/* Logo Padrão */}
                   <div
                     className={`p-5 rounded-xl border flex flex-col items-center justify-between gap-4 transition-all ${theme === 'dark' ? 'bg-[#121214] border-[#29292e]' : 'bg-zinc-50 border-zinc-200'}`}
                   >
                     <span className="text-xs font-bold uppercase tracking-wider text-center opacity-70">
                       Logo Padrão
                     </span>
-                    <div className="w-24 h-24 rounded-xl border border-dashed flex items-center justify-center p-2 border-zinc-500/30">
-                      <FileText size={36} className="opacity-40" />
+                    <div className="w-24 h-24 rounded-xl border border-dashed flex items-center justify-center p-2 border-zinc-500/30 overflow-hidden bg-black/20">
+                      {logoPadraoUrl ? (
+                        <img
+                          src={getImageUrl(logoPadraoUrl) || ''}
+                          alt="Logo Padrão"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <FileText size={36} className="opacity-40" />
+                      )}
                     </div>
                     <label
                       className="w-full py-2.5 px-4 rounded-xl text-xs font-medium text-white text-center cursor-pointer shadow-md transition-all active:scale-95"
                       style={{ backgroundColor: 'var(--primary-color)' }}
                     >
                       Selecionar Arquivo
-                      <input type="file" className="hidden" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e, 'padrao')}
+                      />
                     </label>
                   </div>
 
+                  {/* Logo Horizontal */}
                   <div
                     className={`p-5 rounded-xl border flex flex-col items-center justify-between gap-4 transition-all ${theme === 'dark' ? 'bg-[#121214] border-[#29292e]' : 'bg-zinc-50 border-zinc-200'}`}
                   >
                     <span className="text-xs font-bold uppercase tracking-wider text-center opacity-70">
                       Logo Horizontal
                     </span>
-                    <div className="w-24 h-24 rounded-xl border border-dashed flex items-center justify-center p-2 border-zinc-500/30">
-                      <FileText size={36} className="opacity-40" />
+                    <div className="w-24 h-24 rounded-xl border border-dashed flex items-center justify-center p-2 border-zinc-500/30 overflow-hidden bg-black/20">
+                      {logoHorizontalUrl ? (
+                        <img
+                          src={getImageUrl(logoHorizontalUrl) || ''}
+                          alt="Logo Horizontal"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <FileText size={36} className="opacity-40" />
+                      )}
                     </div>
                     <label
                       className="w-full py-2.5 px-4 rounded-xl text-xs font-medium text-white text-center cursor-pointer shadow-md transition-all active:scale-95"
                       style={{ backgroundColor: 'var(--primary-color)' }}
                     >
                       Selecionar Arquivo
-                      <input type="file" className="hidden" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e, 'horizontal')}
+                      />
                     </label>
                   </div>
                 </div>
@@ -424,9 +547,10 @@ export function Config() {
             </form>
           )}
 
-          {/* CONTEÚDO DA ABA: CREDENCIAIS */}
+          {/* ABA: CREDENCIAIS */}
           {activeTab === 'credenciais' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Formulário de E-mail */}
               <form
                 onSubmit={handleUpdateEmail}
                 className={`p-6 md:p-8 rounded-2xl border shadow-lg space-y-6 flex flex-col justify-between transition-all ${
@@ -477,7 +601,7 @@ export function Config() {
 
                     <div className="space-y-2">
                       <label className="text-xs font-semibold tracking-wide uppercase opacity-80">
-                        Senha Atual
+                        Senha Atual (Obrigatório para segurança)
                       </label>
                       <input
                         type="password"
@@ -503,6 +627,7 @@ export function Config() {
                 </button>
               </form>
 
+              {/* Formulário de Senha */}
               <form
                 onSubmit={handleUpdatePassword}
                 className={`p-6 md:p-8 rounded-2xl border shadow-lg space-y-6 flex flex-col justify-between transition-all ${
@@ -582,7 +707,7 @@ export function Config() {
             </div>
           )}
 
-          {/* CONTEÚDO DA ABA: INFORMAÇÕES */}
+          {/* ABA: INFORMAÇÕES */}
           {activeTab === 'info' && (
             <div
               className={`p-6 md:p-8 rounded-2xl border shadow-lg space-y-6 w-full transition-all ${
@@ -630,7 +755,7 @@ export function Config() {
               <p
                 className={`text-xs text-left pt-4 ${theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'}`}
               >
-                Todos os direitos reservados • {nomeApp || 'Peskisa'}
+                Todos os direitos reservados • {appName || 'Peskisa'}
               </p>
             </div>
           )}
