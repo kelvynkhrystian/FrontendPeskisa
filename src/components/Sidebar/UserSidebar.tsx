@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
   LayoutDashboard,
@@ -14,7 +15,7 @@ import {
   Moon,
   Palette,
 } from 'lucide-react';
-import { api } from '../../services/api';
+import { configService } from '../../services/configService';
 
 interface UserSidebarProps {
   sidebarOpen: boolean;
@@ -30,17 +31,22 @@ export function UserSidebar({
   setMobileMenuOpen,
 }: UserSidebarProps) {
   const { theme, toggleTheme, setPrimaryColor } = useTheme();
-  const [nomeApp, setNomeApp] = useState('Peskisa');
-  const [logoHorizontal, setLogoHorizontal] = useState<string | null>(null);
+  const [logoPadrao, setLogoPadrao] = useState<string | null>(null);
 
   useEffect(() => {
-    api
-      .get('/api/config')
-      .then((response) => {
-        if (response.data) {
-          if (response.data.nome_app) setNomeApp(response.data.nome_app);
-          if (response.data.logo_horizontal)
-            setLogoHorizontal(response.data.logo_horizontal);
+    configService
+      .getConfig()
+      .then((data) => {
+        const responseData = data.config || data;
+        if (responseData) {
+          const logoUrl =
+            responseData.logo_horizontal ||
+            responseData.logo_padrao ||
+            responseData.logo;
+
+          if (logoUrl) {
+            setLogoPadrao(logoUrl);
+          }
         }
       })
       .catch((error) => console.error('Erro ao buscar configurações:', error));
@@ -49,7 +55,7 @@ export function UserSidebar({
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 border-r ${
-        sidebarOpen ? 'w-64' : 'w-20'
+        sidebarOpen ? 'w-64' : 'w-16'
       } ${
         theme === 'dark'
           ? 'bg-[#1a1a1e] border-[#29292e]'
@@ -59,20 +65,16 @@ export function UserSidebar({
       {/* Topo da Sidebar */}
       <div className="h-20 flex items-center justify-between px-4 border-b border-zinc-500/15">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="flex items-center justify-center shrink-0 w-50 h-40 text-white">
-            {logoHorizontal ? (
+          <div className="flex items-center justify-center shrink-0 h-10 text-white">
+            {logoPadrao ? (
               <img
-                src={`${import.meta.env.VITE_API_URL}${logoHorizontal.startsWith('/') ? '' : '/'}${logoHorizontal}`}
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:3333'}${logoPadrao.startsWith('/') ? '' : '/'}${logoPadrao}`}
                 alt="Logo"
-                className="w-40 h-10 object-contain"
+                className={`h-full object-contain transition-all ${
+                  sidebarOpen ? 'block w-40' : 'hidden'
+                }`}
               />
-            ) : (
-              sidebarOpen && (
-                <span className="font-bold text-lg tracking-tight truncate">
-                  {nomeApp}
-                </span>
-              )
-            )}
+            ) : null}
           </div>
         </div>
         <button
@@ -89,7 +91,7 @@ export function UserSidebar({
         </button>
       </div>
 
-      {/* Links de navegação do Entrevistador */}
+      {/* Links de navegação do Entrevistador com NavLink */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin">
         <div>
           {sidebarOpen && (
@@ -98,17 +100,35 @@ export function UserSidebar({
             </p>
           )}
           <nav className="space-y-1">
-            <a
-              href="/user/dashboard"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors text-white shadow-sm"
-              style={{ backgroundColor: 'var(--primary-color)' }}
+            <NavLink
+              to="/user/dashboard"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <LayoutDashboard size={20} className="shrink-0" />
               {sidebarOpen && <span>Início</span>}
-            </a>
-            <a
-              href="/user/pesquisas"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
+            </NavLink>
+
+            <NavLink
+              to="/user/pesquisas"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <Search size={20} className="shrink-0" />
               {sidebarOpen && <span className="flex-1">Pesquisas</span>}
@@ -117,10 +137,20 @@ export function UserSidebar({
                   4
                 </span>
               )}
-            </a>
-            <a
-              href="/user/envios"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
+            </NavLink>
+
+            <NavLink
+              to="/user/envios"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <Send size={20} className="shrink-0" />
               {sidebarOpen && <span className="flex-1">Envios</span>}
@@ -132,14 +162,24 @@ export function UserSidebar({
                   0
                 </span>
               )}
-            </a>
-            <a
-              href="/user/sincronizar"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
+            </NavLink>
+
+            <NavLink
+              to="/user/sincronizar"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <RefreshCw size={20} className="shrink-0" />
               {sidebarOpen && <span>Sincronizar</span>}
-            </a>
+            </NavLink>
           </nav>
         </div>
 
@@ -150,27 +190,45 @@ export function UserSidebar({
             </p>
           )}
           <nav className="space-y-1">
-            <a
-              href="/user/configuracoes"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
+            <NavLink
+              to="/user/configuracoes"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <Settings size={20} className="shrink-0" />
               {sidebarOpen && <span>Configurações</span>}
-            </a>
-            <a
-              href="/user/suporte"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
+            </NavLink>
+
+            <NavLink
+              to="/user/suporte"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <HelpCircle size={20} className="shrink-0" />
               {sidebarOpen && <span>Suporte</span>}
-            </a>
+            </NavLink>
           </nav>
         </div>
       </div>
 
       {/* Rodapé da Sidebar */}
       <div className="p-3 border-t border-zinc-500/15 space-y-3">
-        {/* Bloco de Cores e Tema: Visível APENAS no mobile (lg:hidden) */}
         {sidebarOpen ? (
           <div className="p-3 rounded-xl bg-zinc-500/5 border border-zinc-500/10 space-y-2.5 lg:hidden">
             <div className="flex items-center justify-between">
@@ -221,13 +279,13 @@ export function UserSidebar({
           </div>
         )}
 
-        <a
-          href="/"
+        <NavLink
+          to="/"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-red-400 hover:bg-red-500/10 transition-colors"
         >
           <LogOut size={20} className="shrink-0" />
           {sidebarOpen && <span>Sair</span>}
-        </a>
+        </NavLink>
       </div>
     </aside>
   );
