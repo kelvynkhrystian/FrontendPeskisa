@@ -476,7 +476,7 @@ export function Config() {
                         Selecionar Arquivo
                         <input
                           type="file"
-                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml, image/x-icon"
                           className="hidden"
                           onChange={(e) => handleFileChange(e, 'icone')}
                         />
@@ -524,7 +524,7 @@ export function Config() {
                         Selecionar Arquivo
                         <input
                           type="file"
-                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml, image/x-icon"
                           className="hidden"
                           onChange={(e) => handleFileChange(e, 'padrao')}
                         />
@@ -572,7 +572,7 @@ export function Config() {
                         Selecionar Arquivo
                         <input
                           type="file"
-                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml, image/x-icon"
                           className="hidden"
                           onChange={(e) => handleFileChange(e, 'horizontal')}
                         />
