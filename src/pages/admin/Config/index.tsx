@@ -87,7 +87,7 @@ export function Config() {
           if (config.nome_app) setAppName(config.nome_app);
           if (config.slogan_app) setAppSlogan(config.slogan_app);
           if (config.telefone_suporte) setAppPhone(config.telefone_suporte);
-          if (config.icone_app) setIconeUrl(config.icone_app);
+          if (config.icone) setIconeUrl(config.icone);
           if (config.logo_padrao) setLogoPadraoUrl(config.logo_padrao);
           if (config.logo_horizontal)
             setLogoHorizontalUrl(config.logo_horizontal);
@@ -146,7 +146,7 @@ export function Config() {
       formData.append('slogan_app', appSlogan);
       formData.append('telefone_suporte', appPhone);
 
-      if (iconeFile) formData.append('icone_app', iconeFile);
+      if (iconeFile) formData.append('icone', iconeFile);
       if (logoPadraoFile) formData.append('logo_padrao', logoPadraoFile);
       if (logoHorizontalFile)
         formData.append('logo_horizontal', logoHorizontalFile);
@@ -438,11 +438,21 @@ export function Config() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Ícone do App */}
                   <div
-                    className={`p-5 rounded-xl border flex flex-col items-center justify-between gap-4 transition-all ${theme === 'dark' ? 'bg-[#121214] border-[#29292e]' : 'bg-zinc-50 border-zinc-200'}`}
+                    className={`p-5 rounded-xl border flex flex-col items-center justify-between gap-4 transition-all ${
+                      theme === 'dark'
+                        ? 'bg-[#121214] border-[#29292e]'
+                        : 'bg-zinc-50 border-zinc-200'
+                    }`}
                   >
-                    <span className="text-xs font-bold uppercase tracking-wider text-center opacity-70">
-                      Ícone do App
-                    </span>
+                    <div className="text-center space-y-1">
+                      <span className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        Ícone do App
+                      </span>
+                      <span className="text-[10px] opacity-50 block">
+                        Recomendado: 512x512px (Máx. 2MB)
+                      </span>
+                    </div>
+
                     <div className="w-24 h-24 rounded-xl border border-dashed flex items-center justify-center p-2 border-zinc-500/30 overflow-hidden bg-black/20">
                       {iconeUrl ? (
                         <img
@@ -454,27 +464,43 @@ export function Config() {
                         <Smartphone size={36} className="opacity-40" />
                       )}
                     </div>
-                    <label
-                      className="w-full py-2.5 px-4 rounded-xl text-xs font-medium text-white text-center cursor-pointer shadow-md transition-all active:scale-95"
-                      style={{ backgroundColor: 'var(--primary-color)' }}
-                    >
-                      Selecionar Arquivo
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleFileChange(e, 'icone')}
-                      />
-                    </label>
+
+                    <div className="w-full space-y-2">
+                      <span className="text-[10px] opacity-50 text-center block">
+                        PNG, JPG, JPEG ou WebP
+                      </span>
+                      <label
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-medium text-white text-center cursor-pointer shadow-md transition-all active:scale-95 block"
+                        style={{ backgroundColor: 'var(--primary-color)' }}
+                      >
+                        Selecionar Arquivo
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          className="hidden"
+                          onChange={(e) => handleFileChange(e, 'icone')}
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   {/* Logo Padrão */}
                   <div
-                    className={`p-5 rounded-xl border flex flex-col items-center justify-between gap-4 transition-all ${theme === 'dark' ? 'bg-[#121214] border-[#29292e]' : 'bg-zinc-50 border-zinc-200'}`}
+                    className={`p-5 rounded-xl border flex flex-col items-center justify-between gap-4 transition-all ${
+                      theme === 'dark'
+                        ? 'bg-[#121214] border-[#29292e]'
+                        : 'bg-zinc-50 border-zinc-200'
+                    }`}
                   >
-                    <span className="text-xs font-bold uppercase tracking-wider text-center opacity-70">
-                      Logo Padrão
-                    </span>
+                    <div className="text-center space-y-1">
+                      <span className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        Logo Padrão
+                      </span>
+                      <span className="text-[10px] opacity-50 block">
+                        Recomendado: 400x400px (Máx. 2MB)
+                      </span>
+                    </div>
+
                     <div className="w-24 h-24 rounded-xl border border-dashed flex items-center justify-center p-2 border-zinc-500/30 overflow-hidden bg-black/20">
                       {logoPadraoUrl ? (
                         <img
@@ -486,27 +512,43 @@ export function Config() {
                         <FileText size={36} className="opacity-40" />
                       )}
                     </div>
-                    <label
-                      className="w-full py-2.5 px-4 rounded-xl text-xs font-medium text-white text-center cursor-pointer shadow-md transition-all active:scale-95"
-                      style={{ backgroundColor: 'var(--primary-color)' }}
-                    >
-                      Selecionar Arquivo
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleFileChange(e, 'padrao')}
-                      />
-                    </label>
+
+                    <div className="w-full space-y-2">
+                      <span className="text-[10px] opacity-50 text-center block">
+                        PNG, JPG, JPEG ou WebP
+                      </span>
+                      <label
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-medium text-white text-center cursor-pointer shadow-md transition-all active:scale-95 block"
+                        style={{ backgroundColor: 'var(--primary-color)' }}
+                      >
+                        Selecionar Arquivo
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          className="hidden"
+                          onChange={(e) => handleFileChange(e, 'padrao')}
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   {/* Logo Horizontal */}
                   <div
-                    className={`p-5 rounded-xl border flex flex-col items-center justify-between gap-4 transition-all ${theme === 'dark' ? 'bg-[#121214] border-[#29292e]' : 'bg-zinc-50 border-zinc-200'}`}
+                    className={`p-5 rounded-xl border flex flex-col items-center justify-between gap-4 transition-all ${
+                      theme === 'dark'
+                        ? 'bg-[#121214] border-[#29292e]'
+                        : 'bg-zinc-50 border-zinc-200'
+                    }`}
                   >
-                    <span className="text-xs font-bold uppercase tracking-wider text-center opacity-70">
-                      Logo Horizontal
-                    </span>
+                    <div className="text-center space-y-1">
+                      <span className="text-xs font-bold uppercase tracking-wider opacity-70 block">
+                        Logo Horizontal
+                      </span>
+                      <span className="text-[10px] opacity-50 block">
+                        Recomendado: 600x200px (Máx. 2MB)
+                      </span>
+                    </div>
+
                     <div className="w-24 h-24 rounded-xl border border-dashed flex items-center justify-center p-2 border-zinc-500/30 overflow-hidden bg-black/20">
                       {logoHorizontalUrl ? (
                         <img
@@ -518,18 +560,24 @@ export function Config() {
                         <FileText size={36} className="opacity-40" />
                       )}
                     </div>
-                    <label
-                      className="w-full py-2.5 px-4 rounded-xl text-xs font-medium text-white text-center cursor-pointer shadow-md transition-all active:scale-95"
-                      style={{ backgroundColor: 'var(--primary-color)' }}
-                    >
-                      Selecionar Arquivo
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleFileChange(e, 'horizontal')}
-                      />
-                    </label>
+
+                    <div className="w-full space-y-2">
+                      <span className="text-[10px] opacity-50 text-center block">
+                        PNG, JPG, JPEG ou WebP
+                      </span>
+                      <label
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-medium text-white text-center cursor-pointer shadow-md transition-all active:scale-95 block"
+                        style={{ backgroundColor: 'var(--primary-color)' }}
+                      >
+                        Selecionar Arquivo
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          className="hidden"
+                          onChange={(e) => handleFileChange(e, 'horizontal')}
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
