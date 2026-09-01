@@ -237,7 +237,7 @@ export function Login() {
 
           <div className="mt-8 pt-4 text-center text-xs space-y-1 select-none border-t border-zinc-500/10">
             <p className={theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'}>
-              Versão 2.0.1 • {nomeApp || 'Peskisa'}
+              Versão 2.0 • {nomeApp || 'Peskisa'}
             </p>
             <p className={theme === 'dark' ? 'text-zinc-600' : 'text-zinc-500'}>
               Desenvolvido por{' '}

@@ -1,15 +1,18 @@
 import { createBrowserRouter } from 'react-router-dom';
 
-// Páginas ativas
+// Páginas Públicas
 import { Login } from '../pages/Login';
-import { Dashboard } from '../pages/admin/Dashboard';
-import { DashboardUser } from '../pages/user/DashboardUser';
-
-// Outras páginas (comentadas por enquanto)
-import { Config } from '../pages/admin/Config';
-// import { ConfigUser } from '../pages/ConfigUser'
 import { NotFound } from '../pages/NotFound';
-// import { Pesquisas } from '../pages/Pesquisas'
+
+// Páginas Admin
+import { Dashboard } from '../pages/admin/Dashboard';
+import { Pesquisas } from '../pages/admin/Pesquisas';
+import { Relatorio } from '../pages/admin/Relatorio';
+import { Equipes } from '../pages/admin/Equipes';
+import { Config } from '../pages/admin/Config';
+
+// Páginas User
+import { DashboardUser } from '../pages/user/DashboardUser';
 // import { PesquisasUser } from '../pages/PesquisasUser'
 // import { Sincronizar } from '../pages/Sincronizar'
 
@@ -29,6 +32,18 @@ export const router = createBrowserRouter([
   {
     path: '/admin/config',
     element: <Config />,
+  },
+  {
+    path: '/admin/pesquisas',
+    element: <Pesquisas />,
+  },
+  {
+    path: '/admin/relatorios',
+    element: <Relatorio />,
+  },
+  {
+    path: '/admin/equipes',
+    element: <Equipes />,
   },
 
   /* --- ROTAS FUTURAS (Descomente quando for usar) ---

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
   LayoutDashboard,
@@ -34,11 +35,12 @@ export function AdminSidebar({
 
   useEffect(() => {
     api
-      .get('/api/config')
+      .get('/config')
       .then((response) => {
-        if (response.data) {
-          if (response.data.logo_horizontal)
-            setLogoPadrao(response.data.logo_horizontal);
+        const responseData = response.data.config || response.data;
+        if (responseData) {
+          if (responseData.logo_horizontal)
+            setLogoPadrao(responseData.logo_horizontal);
         }
       })
       .catch((error) => console.error('Erro ao buscar configurações:', error));
@@ -57,15 +59,18 @@ export function AdminSidebar({
       {/* Topo da Sidebar */}
       <div className="h-20 flex items-center justify-between px-4 border-b border-zinc-500/15">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="flex items-center justify-center shrink-0 w-50 h-40 rounded-xl text-white">
+          <div className="flex items-center justify-center shrink-0 w-40 h-10 text-white">
             {logoPadrao ? (
               <img
-                src={`${import.meta.env.VITE_API_URL}${logoPadrao.startsWith('/') ? '' : '/'}${logoPadrao}`}
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:3333'}${logoPadrao.startsWith('/') ? '' : '/'}${logoPadrao}`}
                 alt="Logo"
-                className="w-40 h-10 object-contain"
+                className="w-full h-full object-contain"
               />
             ) : (
-              <LayoutDashboard size={20} />
+              <LayoutDashboard
+                size={24}
+                style={{ color: 'var(--primary-color)' }}
+              />
             )}
           </div>
         </div>
@@ -83,7 +88,7 @@ export function AdminSidebar({
         </button>
       </div>
 
-      {/* Links de navegação */}
+      {/* Links de navegação com NavLink para controle de estado ativo */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin">
         <div>
           {sidebarOpen && (
@@ -92,35 +97,73 @@ export function AdminSidebar({
             </p>
           )}
           <nav className="space-y-1">
-            <a
-              href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors text-white shadow-sm"
-              style={{ backgroundColor: 'var(--primary-color)' }}
+            <NavLink
+              to="/admin/dashboard"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <LayoutDashboard size={20} className="shrink-0" />
               {sidebarOpen && <span>Início</span>}
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
+            </NavLink>
+
+            <NavLink
+              to="/admin/pesquisas"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <Search size={20} className="shrink-0" />
               {sidebarOpen && <span className="flex-1">Pesquisas</span>}
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
+            </NavLink>
+
+            <NavLink
+              to="/admin/equipes"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <Users size={20} className="shrink-0" />
               {sidebarOpen && <span>Equipes</span>}
-            </a>
-            <a
-              href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
+            </NavLink>
+
+            <NavLink
+              to="/admin/relatorios"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <FileText size={20} className="shrink-0" />
               {sidebarOpen && <span>Relatórios</span>}
-            </a>
+            </NavLink>
           </nav>
         </div>
 
@@ -131,18 +174,31 @@ export function AdminSidebar({
             </p>
           )}
           <nav className="space-y-1">
-            <a
-              href="#"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
+            <NavLink
+              to="/admin/config"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
             >
               <Settings size={20} className="shrink-0" />
               {sidebarOpen && <span>Configurações</span>}
-            </a>
+            </NavLink>
+
+            {/* Botão de Suporte redirecionando para o WhatsApp com o número correto */}
             <a
-              href="#"
+              href="https://wa.me/5598991054292?text=Olá,%20preciso%20de%20suporte%20no%20sistema%20Peskisa!"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10 transition-colors"
             >
-              <HelpCircle size={20} className="shrink-0" />
+              <HelpCircle size={20} className="shrink-0 text-emerald-500" />
               {sidebarOpen && <span>Suporte</span>}
             </a>
           </nav>
@@ -151,7 +207,6 @@ export function AdminSidebar({
 
       {/* Rodapé da Sidebar */}
       <div className="p-3 border-t border-zinc-500/15 space-y-3">
-        {/* Bloco de Cores e Tema: Visível APENAS no mobile (lg:hidden) */}
         {sidebarOpen ? (
           <div className="p-3 rounded-xl bg-zinc-500/5 border border-zinc-500/10 space-y-2.5 lg:hidden">
             <div className="flex items-center justify-between">
@@ -202,13 +257,13 @@ export function AdminSidebar({
           </div>
         )}
 
-        <a
-          href="/"
+        <NavLink
+          to="/"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-red-400 hover:bg-red-500/10 transition-colors"
         >
           <LogOut size={20} className="shrink-0" />
           {sidebarOpen && <span>Sair</span>}
-        </a>
+        </NavLink>
       </div>
     </aside>
   );
