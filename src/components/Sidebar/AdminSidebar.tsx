@@ -15,7 +15,7 @@ import {
   Moon,
   Palette,
 } from 'lucide-react';
-import { api } from '../../services/api';
+import { configService } from '../../services/configService';
 
 interface AdminSidebarProps {
   sidebarOpen: boolean;
@@ -34,13 +34,20 @@ export function AdminSidebar({
   const [logoPadrao, setLogoPadrao] = useState<string | null>(null);
 
   useEffect(() => {
-    api
-      .get('/config')
-      .then((response) => {
-        const responseData = response.data.config || response.data;
+    configService
+      .getConfig()
+      .then((data) => {
+        const responseData = data.config || data;
         if (responseData) {
-          if (responseData.logo_horizontal)
-            setLogoPadrao(responseData.logo_horizontal);
+          // Busca a logo horizontal ou cai em alternativas caso o campo venha com outro nome
+          const logoUrl =
+            responseData.logo_horizontal ||
+            responseData.logo_padrao ||
+            responseData.logo;
+
+          if (logoUrl) {
+            setLogoPadrao(logoUrl);
+          }
         }
       })
       .catch((error) => console.error('Erro ao buscar configurações:', error));
@@ -49,7 +56,7 @@ export function AdminSidebar({
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 border-r ${
-        sidebarOpen ? 'w-64' : 'w-20'
+        sidebarOpen ? 'w-64' : 'w-17'
       } ${
         theme === 'dark'
           ? 'bg-[#1a1a1e] border-[#29292e]'
@@ -64,7 +71,9 @@ export function AdminSidebar({
               <img
                 src={`${import.meta.env.VITE_API_URL || 'http://localhost:3333'}${logoPadrao.startsWith('/') ? '' : '/'}${logoPadrao}`}
                 alt="Logo"
-                className="w-full h-full object-contain"
+                className={`h-full object-contain transition-all ${
+                  sidebarOpen ? 'block w-40' : 'hidden'
+                }`}
               />
             ) : (
               <LayoutDashboard
@@ -191,7 +200,7 @@ export function AdminSidebar({
               {sidebarOpen && <span>Configurações</span>}
             </NavLink>
 
-            {/* Botão de Suporte redirecionando para o WhatsApp com o número correto */}
+            {/* Botão de Suporte redirecionando para o WhatsApp */}
             <a
               href="https://wa.me/5598991054292?text=Olá,%20preciso%20de%20suporte%20no%20sistema%20Peskisa!"
               target="_blank"
