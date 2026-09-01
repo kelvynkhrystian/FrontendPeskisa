@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom';
+import { ProtectedRoute } from './ProtectedRoute';
 
 // Páginas Públicas
 import { Login } from '../pages/Login';
@@ -13,65 +14,70 @@ import { Config } from '../pages/admin/Config';
 
 // Páginas User
 import { DashboardUser } from '../pages/user/DashboardUser';
-// import { PesquisasUser } from '../pages/PesquisasUser'
-// import { Sincronizar } from '../pages/Sincronizar'
 import { ConfigUser } from '../pages/user/ConfigUser';
+// import { PesquisasUser } from '../pages/PesquisasUser';
+// import { Envios } from '../pages/Envios';
 
 export const router = createBrowserRouter([
+  // 🔓 Rota Pública
   {
     path: '/',
     element: <Login />,
   },
+
+  // 👤 ROTAS DO USUÁRIO COMUM (Exige apenas estar logado)
   {
-    path: '/admin/dashboard',
-    element: <Dashboard />,
-  },
-  {
-    path: '/user/dashboard',
-    element: <DashboardUser />,
-  },
-  {
-    path: '/admin/config',
-    element: <Config />,
-  },
-  {
-    path: '/admin/pesquisas',
-    element: <Pesquisas />,
-  },
-  {
-    path: '/admin/relatorios',
-    element: <Relatorio />,
-  },
-  {
-    path: '/admin/equipes',
-    element: <Equipes />,
-  },
-  {
-    path: '/user/config',
-    element: <ConfigUser />,
+    element: <ProtectedRoute requireAdmin={false} />,
+    children: [
+      {
+        path: '/user/dashboard',
+        element: <DashboardUser />,
+      },
+      {
+        path: '/user/config',
+        element: <ConfigUser />,
+      },
+      /* --- ROTAS FUTURAS DE USER (Descomente quando criar) ---
+      {
+        path: '/user/pesquisas',
+        element: <PesquisasUser />,
+      },
+      {
+        path: '/envios',
+        element: <Envios />,
+      },
+      ------------------------------------------------------- */
+    ],
   },
 
-  /* --- ROTAS FUTURAS (Descomente quando for usar) ---
-  
+  // 🛡️ ROTAS DO ADMINISTRADOR (Exige estar logado E ser Admin)
   {
-    path: '/user/config',
-    element: <ConfigUser />,
-  },
-  {
-    path: '/admin/pesquisas',
-    element: <Pesquisas />,
-  },
-  {
-    path: '/user/pesquisas',
-    element: <PesquisasUser />,
-  },
-  {
-    path: '/sincronizar',
-    element: <Sincronizar />,
+    element: <ProtectedRoute requireAdmin={true} />,
+    children: [
+      {
+        path: '/admin/dashboard',
+        element: <Dashboard />,
+      },
+      {
+        path: '/admin/pesquisas',
+        element: <Pesquisas />,
+      },
+      {
+        path: '/admin/relatorios',
+        element: <Relatorio />,
+      },
+      {
+        path: '/admin/equipes',
+        element: <Equipes />,
+      },
+      {
+        path: '/admin/config',
+        element: <Config />,
+      },
+    ],
   },
 
-  -------------------------------------------------- */
-
+  // 🚫 Rota 404 (Qualquer URL não mapeada cai aqui)
   {
     path: '*',
     element: <NotFound />,

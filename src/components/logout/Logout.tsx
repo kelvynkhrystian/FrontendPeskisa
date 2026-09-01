@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
 interface LogoutButtonProps {
   sidebarOpen?: boolean;
@@ -12,19 +14,25 @@ export function LogoutButton({
 }: LogoutButtonProps) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // 1. Remove tokens específicos salvos no navegador (ex: 'token', 'user', etc.)
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
-
-    // 2. Limpa completamente qualquer resíduo restante no storage
-    localStorage.clear();
-    sessionStorage.clear();
-
-    // 3. Redireciona para a tela de login/home com segurança
-    navigate('/', { replace: true });
+  const handleLogout = async () => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333';
+      // Chama o backend para limpar o cookie HTTP-only
+      await axios.post(
+        `${baseUrl}/api/auth/logout`,
+        {},
+        { withCredentials: true }
+      );
+    } catch (error) {
+      console.error('Erro ao deslogar no servidor:', error);
+    } finally {
+      // Limpa qualquer resíduo local
+      localStorage.clear();
+      sessionStorage.clear();
+      toast.success('Sessão encerrada com sucesso.');
+      // Redireciona para o login
+      navigate('/', { replace: true });
+    }
   };
 
   return (
