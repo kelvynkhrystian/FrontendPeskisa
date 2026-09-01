@@ -6,7 +6,7 @@ import { Dashboard } from '../pages/admin/Dashboard';
 import { DashboardUser } from '../pages/user/DashboardUser';
 
 // Outras páginas (comentadas por enquanto)
-// import { Config } from '../pages/Config'
+import { Config } from '../pages/admin/Config';
 // import { ConfigUser } from '../pages/ConfigUser'
 import { NotFound } from '../pages/NotFound';
 // import { Pesquisas } from '../pages/Pesquisas'
@@ -26,12 +26,13 @@ export const router = createBrowserRouter([
     path: '/user/dashboard',
     element: <DashboardUser />,
   },
-
-  /* --- ROTAS FUTURAS (Descomente quando for usar) ---
   {
     path: '/admin/config',
     element: <Config />,
   },
+
+  /* --- ROTAS FUTURAS (Descomente quando for usar) ---
+  
   {
     path: '/user/config',
     element: <ConfigUser />,

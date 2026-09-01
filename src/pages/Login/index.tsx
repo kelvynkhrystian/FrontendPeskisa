@@ -1,31 +1,39 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Sun, Moon, ArrowRight } from 'lucide-react';
-import { api } from '../../services/api';
+import { Sun, Moon, ArrowRight, Loader2 } from 'lucide-react';
+import { configService } from '../../services/configService';
+import { authService } from '../../services/authService';
+import toast, { Toaster } from 'react-hot-toast';
 
 export function Login() {
   const { theme, toggleTheme, setPrimaryColor, nomeApp } = useTheme();
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const [sloganApp, setSloganApp] = useState('Entre com suas credenciais!');
   const [logoPadrao, setLogoPadrao] = useState<string | null>(null);
 
-  // Busca apenas os dados específicos necessários para a tela de login
+  // Define o título da página
   useEffect(() => {
-    document.title = `Login - ${nomeApp}`;
+    document.title = `Login - ${nomeApp || 'Peskisa'}`;
   }, [nomeApp]);
 
+  // Busca as configurações usando o configService estruturado
   useEffect(() => {
-    api
-      .get('/api/config')
-      .then((response) => {
-        if (response.data) {
-          if (response.data.slogan_app) {
-            setSloganApp(response.data.slogan_app);
+    configService
+      .getConfig()
+      .then((data) => {
+        const responseData = data.config || data;
+        if (responseData) {
+          if (responseData.slogan_app) {
+            setSloganApp(responseData.slogan_app);
           }
-          if (response.data.logo_padrao) {
-            setLogoPadrao(response.data.logo_padrao);
+          if (responseData.logo_padrao) {
+            setLogoPadrao(responseData.logo_padrao);
           }
         }
       })
@@ -34,9 +42,35 @@ export function Login() {
       });
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Função de login integrada com authService e toast
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Login efetuado com sucesso!');
+
+    if (!email || !password) {
+      toast.error('Preencha o e-mail e a senha!');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Usa o serviço de autenticação
+      await authService.login({ email, senha: password });
+
+      toast.success('Login efetuado com sucesso!');
+
+      setTimeout(() => {
+        navigate('/admin/dashboard');
+      }, 1000);
+    } catch (error: unknown) {
+      console.error('Erro no login:', error);
+      const err = error as { response?: { data?: { error?: string } } };
+      const errorMsg =
+        err.response?.data?.error || 'E-mail ou senha inválidos.';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,6 +81,8 @@ export function Login() {
           : 'bg-[#f4f4f5] text-[#18181b]'
       }`}
     >
+      <Toaster position="top-right" reverseOrder={false} />
+
       <header className="flex justify-between items-center p-6">
         <div
           className={`flex items-center gap-2 p-2 rounded-xl border ${
@@ -105,7 +141,7 @@ export function Login() {
             <div className="mt-4 mb-4 flex items-center justify-center min-h-[4rem]">
               {logoPadrao ? (
                 <img
-                  src={`${import.meta.env.VITE_API_URL}${logoPadrao.startsWith('/') ? '' : '/'}${logoPadrao}`}
+                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:3333'}${logoPadrao.startsWith('/') ? '' : '/'}${logoPadrao}`}
                   alt="Logo"
                   className="w-50 object-contain"
                 />
@@ -134,10 +170,8 @@ export function Login() {
 
             {!logoPadrao && (
               <h1 className="text-4xl font-bold tracking-tight">
-                {nomeApp}
-                {nomeApp === 'Peskisa' && (
-                  <span style={{ color: 'var(--primary-color)' }}>.</span>
-                )}
+                {nomeApp || 'Peskisa'}
+                <span style={{ color: 'var(--primary-color)' }}>.</span>
               </h1>
             )}
 
@@ -183,17 +217,27 @@ export function Login() {
 
             <button
               type="submit"
-              className="w-full mt-4 py-3.5 px-4 text-white font-medium rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+              disabled={loading}
+              className="w-full mt-4 py-3.5 px-4 text-white font-medium rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] disabled:opacity-70"
               style={{ backgroundColor: 'var(--primary-color)' }}
             >
-              <span>Entrar</span>
-              <ArrowRight size={18} />
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  <span>Entrando...</span>
+                </>
+              ) : (
+                <>
+                  <span>Entrar</span>
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </form>
 
           <div className="mt-8 pt-4 text-center text-xs space-y-1 select-none border-t border-zinc-500/10">
             <p className={theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'}>
-              Versão 2.0.1 • {nomeApp}
+              Versão 2.0.1 • {nomeApp || 'Peskisa'}
             </p>
             <p className={theme === 'dark' ? 'text-zinc-600' : 'text-zinc-500'}>
               Desenvolvido por{' '}
@@ -202,6 +246,7 @@ export function Login() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:underline transition-all"
+                style={{ color: 'var(--primary-color)' }}
               >
                 kelvynk
               </a>
