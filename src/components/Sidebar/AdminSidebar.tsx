@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
+import { LogoutButton } from '../../components/logout/Logout';
 import {
   LayoutDashboard,
   Users,
   FileText,
   Settings,
   HelpCircle,
-  LogOut,
   Search,
   Menu,
   X,
@@ -39,7 +39,6 @@ export function AdminSidebar({
       .then((data) => {
         const responseData = data.config || data;
         if (responseData) {
-          // Busca a logo horizontal ou cai em alternativas caso o campo venha com outro nome
           const logoUrl =
             responseData.logo_horizontal ||
             responseData.logo_padrao ||
@@ -266,13 +265,8 @@ export function AdminSidebar({
           </div>
         )}
 
-        <NavLink
-          to="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-red-400 hover:bg-red-500/10 transition-colors"
-        >
-          <LogOut size={20} className="shrink-0" />
-          {sidebarOpen && <span>Sair</span>}
-        </NavLink>
+        {/* Componente de Logout Isolado */}
+        <LogoutButton sidebarOpen={sidebarOpen} />
       </div>
     </aside>
   );
