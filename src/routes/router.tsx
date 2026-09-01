@@ -15,6 +15,7 @@ import { Config } from '../pages/admin/Config';
 import { DashboardUser } from '../pages/user/DashboardUser';
 // import { PesquisasUser } from '../pages/PesquisasUser'
 // import { Sincronizar } from '../pages/Sincronizar'
+import { ConfigUser } from '../pages/user/ConfigUser';
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +45,10 @@ export const router = createBrowserRouter([
   {
     path: '/admin/equipes',
     element: <Equipes />,
+  },
+  {
+    path: '/user/config',
+    element: <ConfigUser />,
   },
 
   /* --- ROTAS FUTURAS (Descomente quando for usar) ---

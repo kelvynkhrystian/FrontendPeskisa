@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Search,
   Send,
-  RefreshCw,
   Settings,
   HelpCircle,
   LogOut,
@@ -162,23 +161,6 @@ export function UserSidebar({
                   0
                 </span>
               )}
-            </NavLink>
-
-            <NavLink
-              to="/user/sincronizar"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
-                  isActive
-                    ? 'text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
-                }`
-              }
-              style={({ isActive }) =>
-                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
-              }
-            >
-              <RefreshCw size={20} className="shrink-0" />
-              {sidebarOpen && <span>Sincronizar</span>}
             </NavLink>
           </nav>
         </div>

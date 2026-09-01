@@ -779,7 +779,7 @@ export function Config() {
                   <span className="text-xs font-bold uppercase tracking-wider opacity-60 block mb-1">
                     Versão Atual
                   </span>
-                  <span className="text-lg font-bold">2.0.1</span>
+                  <span className="text-lg font-bold">1.0</span>
                 </div>
 
                 <div
