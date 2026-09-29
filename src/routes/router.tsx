@@ -8,6 +8,7 @@ import { NotFound } from '../pages/NotFound';
 // Páginas Admin
 import { Dashboard } from '../pages/admin/Dashboard';
 import { Pesquisas } from '../pages/admin/Pesquisas';
+import { DetalhesPesquisa } from '../pages/admin/Pesquisas/[id]';
 import { Relatorio } from '../pages/admin/Relatorio';
 import { Equipes } from '../pages/admin/Equipes';
 import { Config } from '../pages/admin/Config';
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
         path: '/user/config',
         element: <ConfigUser />,
       },
+
       /* --- ROTAS FUTURAS DE USER (Descomente quando criar) ---
       {
         path: '/user/pesquisas',
@@ -61,6 +63,10 @@ export const router = createBrowserRouter([
       {
         path: '/admin/pesquisas',
         element: <Pesquisas />,
+      },
+      {
+        path: '/admin/pesquisas/:id',
+        element: <DetalhesPesquisa />,
       },
       {
         path: '/admin/relatorios',
