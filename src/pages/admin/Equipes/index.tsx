@@ -217,7 +217,7 @@ export function Equipes() {
           await userService.update(Number(selectedItem.id), {
             nome: formData.nome,
             email: formData.email,
-            equipe_id: formattedEquipeId,
+            equipe_id: formattedEquipeId, // <--- Aqui
             ...(formData.senha ? { senha: formData.senha } : {}),
           });
           toast.success('Funcionário atualizado com sucesso!');
@@ -227,7 +227,7 @@ export function Equipes() {
             email: formData.email,
             senha: formData.senha || '123456',
             role: 'user',
-            equipe_id: formattedEquipeId,
+            equipe_id: formattedEquipeId, // <--- E aqui
           });
           toast.success('Funcionário cadastrado com sucesso!');
         }
@@ -320,7 +320,7 @@ export function Equipes() {
           </div>
 
           <div
-            className="flex p-1.5 rounded-lg gap-2 max-w-sm border shadow-sm transition-all"
+            className="flex p-1.5 rounded-lg gap-2 w-full sm:max-w-sm border shadow-sm transition-all"
             style={{
               backgroundColor: theme === 'dark' ? '#1a1a1e' : '#ffffff',
               borderColor: theme === 'dark' ? '#29292e' : '#e4e4e7',
