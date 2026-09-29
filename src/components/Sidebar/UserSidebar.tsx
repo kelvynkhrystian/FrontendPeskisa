@@ -173,7 +173,7 @@ export function UserSidebar({
           )}
           <nav className="space-y-1">
             <NavLink
-              to="/user/configuracoes"
+              to="/user/config"
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
                   isActive
