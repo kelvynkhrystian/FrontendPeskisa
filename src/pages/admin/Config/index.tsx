@@ -176,7 +176,7 @@ export function Config() {
 
     try {
       // Enviando o novo e-mail e a senha atual para o backend verificar via bcrypt/token
-      await userService.updateUser(userId, {
+      await userService.update(userId, {
         email: newEmail,
         senha_atual: emailPassword, // Campo validado no backend
       });
@@ -214,7 +214,7 @@ export function Config() {
 
     try {
       // Enviando a senha atual (para o bcrypt conferir) e a nova senha
-      await userService.updateUser(userId, {
+      await userService.update(userId, {
         senha_atual: currentPassword,
         senha: newPassword,
       });
