@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { UserSidebar } from '../../../components/Sidebar/UserSidebar'; // Sidebar específica do usuário comum
+import { UserSidebar } from '../../../components/Sidebar/UserSidebar';
 import { Header } from '../../../components/Header/Header';
 import { userService } from '../../../services/userService';
 import { configService } from '../../../services/configService';
@@ -24,8 +24,8 @@ export function ConfigUser() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // ID do usuário logado
-  const [userId, setUserId] = useState<number | null>(null);
+  // ID do usuário logado (mantido para verificações locais, se necessário)
+  // const [userId, setUserId] = useState<number | null>(null);
   const [appName, setAppName] = useState(nomeApp || 'Peskisa');
 
   // Estados de Credenciais
@@ -45,7 +45,7 @@ export function ConfigUser() {
         const data = await userService.getMe();
         const user = data.user || data;
         if (user && user.id) {
-          setUserId(user.id);
+          // setUserId(user.id);
           setCurrentEmail(user.email || '');
         }
       } catch (error) {
@@ -70,20 +70,16 @@ export function ConfigUser() {
     loadSystemConfig();
   }, [nomeApp]);
 
-  const handleUpdateEmail = async (e: React.FormEvent) => {
+  const handleUpdateEmail = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newEmail || !emailPassword) {
       toast.error('Preencha o novo e-mail e a senha atual!');
       return;
     }
 
-    if (!userId) {
-      toast.error('ID do usuário não carregado. Recarregue a página.');
-      return;
-    }
-
     try {
-      await userService.updateUser(userId, {
+      // Usando a nova rota dedicada ao perfil do usuário logado
+      await userService.updateProfile({
         email: newEmail,
         senha_atual: emailPassword,
       });
@@ -101,7 +97,7 @@ export function ConfigUser() {
     }
   };
 
-  const handleUpdatePassword = async (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error('Preencha todos os campos de senha!');
@@ -113,15 +109,11 @@ export function ConfigUser() {
       return;
     }
 
-    if (!userId) {
-      toast.error('ID do usuário não carregado. Recarregue a página.');
-      return;
-    }
-
     try {
-      await userService.updateUser(userId, {
-        senha_atual: currentPassword,
-        senha: newPassword,
+      // Usando a nova rota dedicada para alteração de senha do usuário
+      await userService.updateMyPassword({
+        senhaAtual: currentPassword,
+        novaSenha: newPassword,
       });
 
       toast.success('Senha alterada com sucesso!');

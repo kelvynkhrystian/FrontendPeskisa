@@ -17,4 +17,18 @@ export const userService = {
     const response = await api.put(`/api/users/${id}`, data);
     return response.data;
   },
+
+  updateProfile: async (data: {
+    email?: string;
+    nome?: string;
+    senha_atual?: string;
+  }) => {
+    const response = await api.put('/api/users/me', data);
+    return response.data;
+  },
+
+  updateMyPassword: async (data: { senhaAtual: string; novaSenha: string }) => {
+    const response = await api.put('/api/users/me/password', data);
+    return response.data;
+  },
 };
