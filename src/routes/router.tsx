@@ -9,6 +9,7 @@ import { NotFound } from '../pages/NotFound';
 import { Dashboard } from '../pages/admin/Dashboard';
 import { Pesquisas } from '../pages/admin/Pesquisas';
 import { DetalhesPesquisa } from '../pages/admin/Pesquisas/[id]';
+import { DetalhesTemplate } from '../pages/admin/Templates/[id]';
 import { Relatorio } from '../pages/admin/Relatorio';
 import { Equipes } from '../pages/admin/Equipes';
 import { Config } from '../pages/admin/Config';
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
       {
         path: '/admin/pesquisas/:id',
         element: <DetalhesPesquisa />,
+      },
+      {
+        path: '/admin/templates/:id',
+        element: <DetalhesTemplate />,
       },
       {
         path: '/admin/relatorios',

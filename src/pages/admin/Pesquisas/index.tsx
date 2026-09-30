@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { AdminSidebar } from '../../../components/Sidebar/AdminSidebar';
 import { Header } from '../../../components/Header/Header';
@@ -20,6 +21,7 @@ import {
   X,
   Calendar,
   UserCheck,
+  Layers,
   UserMinus,
 } from 'lucide-react';
 
@@ -49,6 +51,7 @@ interface Template {
 
 export function Pesquisas() {
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'pesquisas' | 'templates'>(
     'pesquisas'
   );
@@ -533,11 +536,11 @@ export function Pesquisas() {
                     <div className="flex items-center gap-2 mt-8 pt-4 border-t border-zinc-500/15">
                       <button
                         onClick={() =>
-                          (window.location.href = `/admin/pesquisas/${template.id}`)
+                          navigate(`/admin/templates/${template.id}`)
                         }
-                        className="flex-1 py-2 rounded-lg bg-purple-500/10 text-purple-500 hover:bg-purple-500 hover:text-white transition-colors flex items-center justify-center gap-1 text-xs font-semibold cursor-pointer"
+                        className="flex-1 py-2 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500 hover:text-white transition-colors flex items-center justify-center gap-1.5 text-xs font-medium cursor-pointer"
                       >
-                        <Settings size={14} />
+                        <Layers size={14} />
                         <span>Gerir</span>
                       </button>
                       <button

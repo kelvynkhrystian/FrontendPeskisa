@@ -6,8 +6,7 @@ import { Header } from '../../../../components/Header/Header';
 import { pesquisaService } from '../../../../services/pesquisaService';
 import { perguntaService } from '../../../../services/perguntaService';
 import { perguntaOpcaoService } from '../../../../services/perguntaOpcaoService';
-import { equipeService } from '../../../../services/equipeService';
-import { pesquisaEquipeService } from '../../../../services/pesquisaEquipeService';
+import { api } from '../../../../services/api';
 import toast, { Toaster } from 'react-hot-toast';
 import {
   FileText,
@@ -19,8 +18,7 @@ import {
   Plus,
   X,
   Layers,
-  Calendar,
-  Users,
+  Send,
 } from 'lucide-react';
 
 interface Opcao {
@@ -30,29 +28,18 @@ interface Opcao {
   ordem?: number;
 }
 
-interface Pergunta {
+interface PerguntaTemplate {
   id: number;
   titulo: string;
-  descricao?: string;
   tipo: string;
   ordem: number;
   obrigatoria?: number;
   escala_max?: number;
-  pesquisa_id: number;
+  template_id: number;
   opcoes?: Opcao[];
 }
 
-interface Pesquisa {
-  id: number;
-  titulo: string;
-  empresa?: string;
-  descricao?: string;
-  status?: string;
-  data_inicio?: string;
-  data_fim?: string;
-}
-
-export function DetalhesPesquisa() {
+export function DetalhesTemplate() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -60,19 +47,24 @@ export function DetalhesPesquisa() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [pesquisa, setPesquisa] = useState<Pesquisa | null>(null);
-  const [perguntas, setPerguntas] = useState<Pergunta[]>([]);
-  const [equipesVinculadas, setEquipesVinculadas] = useState<any[]>([]);
+  const [template, setTemplate] = useState<any>(null);
+  const [perguntas, setPerguntas] = useState<PerguntaTemplate[]>([]);
+  const [pesquisas, setPesquisas] = useState<any[]>([]);
 
-  const [isEditPesquisaModalOpen, setIsEditPesquisaModalOpen] = useState(false);
   const [isPerguntaModalOpen, setIsPerguntaModalOpen] = useState(false);
+  const [isInjectModalOpen, setIsInjectModalOpen] = useState(false);
   const [modalPerguntaType, setModalPerguntaType] = useState<'nova' | 'editar'>(
     'nova'
   );
-  const [selectedPergunta, setSelectedPergunta] = useState<Pergunta | null>(
-    null
-  );
+  const [selectedPergunta, setSelectedPergunta] =
+    useState<PerguntaTemplate | null>(null);
 
+  const [posicaoInsercao, setPosicaoInsercao] = useState<'inicio' | 'fim'>(
+    'fim'
+  );
+  const [pesquisaSelecionadaId, setPesquisaSelecionadaId] = useState<
+    number | ''
+  >('');
   const [opcoesRemovidas, setOpcoesRemovidas] = useState<number[]>([]);
 
   const [deleteModal, setDeleteModal] = useState<{
@@ -80,15 +72,6 @@ export function DetalhesPesquisa() {
     id: number | null;
     titulo: string;
   }>({ isOpen: false, id: null, titulo: '' });
-
-  const [pesquisaForm, setPesquisaForm] = useState({
-    titulo: '',
-    empresa: '',
-    descricao: '',
-    data_inicio: '',
-    data_fim: '',
-    status: 'ativa',
-  });
 
   const [perguntaForm, setPerguntaForm] = useState({
     titulo: '',
@@ -100,82 +83,67 @@ export function DetalhesPesquisa() {
 
   useEffect(() => {
     if (id) {
-      loadDetalhesPesquisa();
-      loadEquipesVinculadas();
+      loadTemplateData();
+      loadPesquisasDisponiveis();
     }
   }, [id]);
 
-  async function loadEquipesVinculadas() {
+  async function loadTemplateData() {
     try {
-      const [relacoesRes, equipesRes] = await Promise.all([
-        pesquisaEquipeService.getByPesquisa(Number(id)),
-        equipeService.getAll(),
-      ]);
+      const resTemplates = await api.get('/api/templates-perguntas');
+      const listaTemplates =
+        resTemplates.data.templates || resTemplates.data || [];
+      const encontrado = listaTemplates.find((t: any) => t.id === Number(id));
 
-      const relacoes = relacoesRes.data || relacoesRes || [];
-      const todasEquipes = equipesRes.equipes || equipesRes || [];
+      // Mapeia corretamente o título e a descrição reais vindos da base de dados
+      setTemplate(
+        encontrado || {
+          id,
+          titulo: 'Template Reutilizável',
+          descricao: 'Modelo reutilizável de perguntas',
+        }
+      );
 
-      const vinculadas = relacoes
-        .map((rel: any) => {
-          return (
-            todasEquipes.find((eq: any) => eq.id === rel.equipe_id) ||
-            rel.equipe
-          );
-        })
-        .filter(Boolean);
-
-      setEquipesVinculadas(vinculadas);
-    } catch (err) {
-      console.error('Erro ao buscar equipes vinculadas:', err);
-    }
-  }
-
-  async function loadDetalhesPesquisa() {
-    try {
-      const res = await pesquisaService.getAll();
-      const lista = res.pesquisas || res;
-      const encontrada = lista.find((p: Pesquisa) => p.id === Number(id));
-
-      if (encontrada) {
-        setPesquisa(encontrada);
-        setPesquisaForm({
-          titulo: encontrada.titulo || '',
-          empresa: encontrada.empresa || '',
-          descricao: encontrada.descricao || '',
-          data_inicio: encontrada.data_inicio
-            ? encontrada.data_inicio.split('T')[0]
-            : '',
-          data_fim: encontrada.data_fim
-            ? encontrada.data_fim.split('T')[0]
-            : '',
-          status: encontrada.status || 'ativa',
-        });
-      }
-
-      const perguntasRes = await perguntaService.getAll({ pesquisa_id: id });
-      const listaPerguntas = perguntasRes.perguntas || perguntasRes || [];
+      const resPerguntas = await perguntaService.getAll();
+      const listaPerguntas = resPerguntas.perguntas || resPerguntas || [];
       const filtradas = listaPerguntas.filter(
-        (p: Pergunta) => Number(p.pesquisa_id) === Number(id)
+        (p: any) => Number(p.template_id) === Number(id)
       );
 
       try {
         const opcoesRes = await perguntaOpcaoService.getAll();
         const todasOpcoes = opcoesRes.opcoes || opcoesRes || [];
 
-        filtradas.forEach((p: Pergunta) => {
+        filtradas.forEach((p: PerguntaTemplate) => {
           p.opcoes = todasOpcoes
             .filter((o: Opcao) => Number(o.pergunta_id) === Number(p.id))
             .sort((a: Opcao, b: Opcao) => (a.ordem || 0) - (b.ordem || 0));
         });
       } catch (err) {
-        console.error('Erro ao buscar opções das perguntas:', err);
+        console.error('Erro ao buscar opções:', err);
       }
 
-      setPerguntas(
-        filtradas.sort((a: Pergunta, b: Pergunta) => a.ordem - b.ordem)
+      const ordenadas = filtradas.sort(
+        (a: PerguntaTemplate, b: PerguntaTemplate) =>
+          (a.ordem || 0) - (b.ordem || 0)
       );
+      const normalizadas = ordenadas.map((p, idx) => ({
+        ...p,
+        ordem: idx + 1,
+      }));
+
+      setPerguntas(normalizadas);
     } catch {
-      toast.error('Erro ao carregar detalhes da pesquisa.');
+      toast.error('Erro ao carregar dados do template.');
+    }
+  }
+
+  async function loadPesquisasDisponiveis() {
+    try {
+      const res = await pesquisaService.getAll();
+      setPesquisas(res.pesquisas || res || []);
+    } catch {
+      console.error('Erro ao carregar pesquisas');
     }
   }
 
@@ -209,21 +177,9 @@ export function DetalhesPesquisa() {
     }
   };
 
-  const handleUpdatePesquisa = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await pesquisaService.update(Number(id), pesquisaForm);
-      toast.success('Pesquisa atualizada com sucesso!');
-      setIsEditPesquisaModalOpen(false);
-      loadDetalhesPesquisa();
-    } catch {
-      toast.error('Erro ao atualizar pesquisa.');
-    }
-  };
-
   const handleOpenModalPergunta = (
     type: 'nova' | 'editar',
-    pergunta: Pergunta | null = null
+    pergunta: PerguntaTemplate | null = null
   ) => {
     setModalPerguntaType(type);
     setOpcoesRemovidas([]);
@@ -287,16 +243,19 @@ export function DetalhesPesquisa() {
   const handleSavePergunta = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const proximaOrdem =
+        modalPerguntaType === 'nova'
+          ? perguntas.length + 1
+          : selectedPergunta?.ordem;
+
       const payloadPergunta = {
         titulo: perguntaForm.titulo,
         descricao: 'sem descrição',
         tipo: perguntaForm.tipo,
         obrigatoria: Number(perguntaForm.obrigatoria),
-        pesquisa_id: Number(id),
-        ordem:
-          modalPerguntaType === 'nova'
-            ? perguntas.length + 1
-            : selectedPergunta?.ordem,
+        template_id: Number(id),
+        pesquisa_id: null,
+        ordem: proximaOrdem,
         escala_max:
           perguntaForm.tipo === 'escala'
             ? Number(perguntaForm.escala_max)
@@ -316,21 +275,13 @@ export function DetalhesPesquisa() {
           perguntaId = res.data.id;
         }
 
-        // Se o ID veio nulo ou não veio, resgata imediatamente pelo título na base de dados
         if (!perguntaId) {
-          const todasPerguntasRes = await perguntaService.getAll({
-            pesquisa_id: id,
-          });
+          const todasPerguntasRes = await perguntaService.getAll();
           const listaPerguntas =
             todasPerguntasRes.perguntas || todasPerguntasRes || [];
-
           const perguntaResgatada = listaPerguntas
-            .filter(
-              (p: Pergunta) =>
-                p.titulo === payloadPergunta.titulo &&
-                Number(p.pesquisa_id) === payloadPergunta.pesquisa_id
-            )
-            .sort((a: Pergunta, b: Pergunta) => b.id - a.id)[0];
+            .filter((p: any) => Number(p.template_id) === Number(id))
+            .sort((a: any, b: any) => b.id - a.id)[0];
 
           if (perguntaResgatada && perguntaResgatada.id) {
             perguntaId = perguntaResgatada.id;
@@ -341,9 +292,7 @@ export function DetalhesPesquisa() {
       }
 
       if (!perguntaId) {
-        toast.error(
-          'Erro crítico: Não foi possível identificar o ID da pergunta.'
-        );
+        toast.error('Erro ao identificar o ID da pergunta.');
         return;
       }
 
@@ -376,26 +325,18 @@ export function DetalhesPesquisa() {
             });
           }
         }
-      } else if (perguntaId && !precisaDeOpcoes && selectedPergunta?.opcoes) {
-        for (const op of selectedPergunta.opcoes) {
-          if (op.id) await perguntaOpcaoService.delete(op.id);
-        }
       }
 
       toast.success(
         modalPerguntaType === 'nova'
-          ? 'Pergunta e opções salvas com sucesso!'
+          ? 'Pergunta adicionada ao template!'
           : 'Pergunta atualizada!'
       );
       setIsPerguntaModalOpen(false);
-      loadDetalhesPesquisa();
+      loadTemplateData();
     } catch (error: any) {
-      console.error('Erro ao salvar:', error);
-      const msg =
-        error.response?.data?.error ||
-        error.message ||
-        'Erro ao salvar pergunta.';
-      toast.error(msg);
+      console.error(error);
+      toast.error('Erro ao salvar pergunta.');
     }
   };
 
@@ -407,11 +348,123 @@ export function DetalhesPesquisa() {
     if (!deleteModal.id) return;
     try {
       await perguntaService.delete(deleteModal.id);
+
+      const restantes = perguntas.filter((p) => p.id !== deleteModal.id);
+      for (let i = 0; i < restantes.length; i++) {
+        await perguntaService.update(restantes[i].id, { ordem: i + 1 });
+      }
+
       toast.success('Pergunta excluída com sucesso!');
       setDeleteModal({ isOpen: false, id: null, titulo: '' });
-      loadDetalhesPesquisa();
+      loadTemplateData();
     } catch {
       toast.error('Erro ao excluir pergunta.');
+    }
+  };
+
+  const handleInjetarNaPesquisa = async () => {
+    if (!pesquisaSelecionadaId) {
+      toast.error('Selecione uma pesquisa de destino.');
+      return;
+    }
+
+    if (perguntas.length === 0) {
+      toast.error('Este template não tem perguntas.');
+      return;
+    }
+
+    try {
+      // 1. Busca todas as perguntas que já estão na pesquisa de destino
+      const resPesq = await perguntaService.getAll({
+        pesquisa_id: pesquisaSelecionadaId,
+      });
+      const perguntasDestino = resPesq.perguntas || resPesq || [];
+
+      // Ordena as perguntas atuais da pesquisa pela ordem delas
+      const existentesOrdenadas = perguntasDestino.sort(
+        (a: any, b: any) => (a.ordem || 0) - (b.ordem || 0)
+      );
+
+      if (posicaoInsercao === 'inicio') {
+        // SE FOR NO INÍCIO:
+        // Desloca todas as perguntas existentes para a frente (somando a quantidade de perguntas do template)
+        for (let i = 0; i < existentesOrdenadas.length; i++) {
+          const pExistente = existentesOrdenadas[i];
+          const novaOrdemExistente = perguntas.length + i + 1;
+          await perguntaService.update(pExistente.id, {
+            ordem: novaOrdemExistente,
+          });
+        }
+
+        // Insere as perguntas do template nas posições 1, 2, 3...
+        for (let i = 0; i < perguntas.length; i++) {
+          const pOrig = perguntas[i];
+          const novaOrdemTemplate = i + 1;
+
+          const novaPRes = await perguntaService.create({
+            titulo: pOrig.titulo,
+            descricao: 'sem descrição',
+            tipo: pOrig.tipo,
+            obrigatoria: pOrig.obrigatoria ?? 1,
+            pesquisa_id: Number(pesquisaSelecionadaId),
+            template_id: null,
+            ordem: novaOrdemTemplate,
+          });
+
+          const novaId =
+            novaPRes.id || novaPRes.pergunta?.id || novaPRes.data?.id;
+          if (novaId && pOrig.opcoes) {
+            for (const op of pOrig.opcoes) {
+              await perguntaOpcaoService.create({
+                pergunta_id: novaId,
+                opcao_texto: op.opcao_texto,
+                ordem: op.ordem || 1,
+              });
+            }
+          }
+        }
+      } else {
+        // SE FOR NO FIM:
+        // Mantém as existentes onde estão e insere as do template logo após a última existente
+        const ultimaOrdemExistente =
+          existentesOrdenadas.length > 0
+            ? Math.max(...existentesOrdenadas.map((p: any) => p.ordem || 0))
+            : 0;
+
+        for (let i = 0; i < perguntas.length; i++) {
+          const pOrig = perguntas[i];
+          let novaOrdem = ultimaOrdemExistente + i + 1;
+
+          const novaPRes = await perguntaService.create({
+            titulo: pOrig.titulo,
+            descricao: 'sem descrição',
+            tipo: pOrig.tipo,
+            obrigatoria: pOrig.obrigatoria ?? 1,
+            pesquisa_id: Number(pesquisaSelecionadaId),
+            template_id: null,
+            ordem: novaOrdem,
+          });
+
+          const novaId =
+            novaPRes.id || novaPRes.pergunta?.id || novaPRes.data?.id;
+          if (novaId && pOrig.opcoes) {
+            for (const op of pOrig.opcoes) {
+              await perguntaOpcaoService.create({
+                pergunta_id: novaId,
+                opcao_texto: op.opcao_texto,
+                ordem: op.ordem || 1,
+              });
+            }
+          }
+        }
+      }
+
+      toast.success('Perguntas injetadas e ordenadas com sucesso!');
+      setIsInjectModalOpen(false);
+      navigate(`/admin/pesquisas/${pesquisaSelecionadaId}`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao injetar perguntas.');
     }
   };
 
@@ -440,7 +493,6 @@ export function DetalhesPesquisa() {
       className={`min-h-screen flex transition-colors duration-300 ${theme === 'dark' ? 'bg-[#121214] text-[#e1e1e6]' : 'bg-[#f4f4f5] text-[#18181b]'}`}
     >
       <Toaster position="top-right" />
-
       <AdminSidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -450,7 +502,7 @@ export function DetalhesPesquisa() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <Header
-          title="Gerenciar Pesquisa"
+          title="Gerenciar Template"
           setMobileMenuOpen={setMobileMenuOpen}
         />
 
@@ -459,17 +511,17 @@ export function DetalhesPesquisa() {
             onClick={() => navigate('/admin/pesquisas')}
             className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl border transition-all cursor-pointer w-fit ${
               theme === 'dark'
-                ? 'bg-[#1a1a1e] border-[#29292e] hover:bg-zinc-800 text-zinc-300'
-                : 'bg-white border-zinc-200 hover:bg-zinc-100 text-zinc-700'
+                ? 'bg-[#1a1a1e] border-[#29292e] text-zinc-300'
+                : 'bg-white border-zinc-200 text-zinc-700'
             }`}
           >
             <ArrowLeft size={16} />
             <span>Voltar para Pesquisas</span>
           </button>
 
-          {/* Cabeçalho */}
+          {/* Cabeçalho do Template puxando o título e a descrição reais */}
           <div
-            className={`p-6 md:p-8 rounded-2xl border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all ${theme === 'dark' ? 'bg-[#1a1a1e] border-[#29292e]' : 'bg-white border-zinc-200'}`}
+            className={`p-6 md:p-8 rounded-2xl border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6 ${theme === 'dark' ? 'bg-[#1a1a1e] border-[#29292e]' : 'bg-white border-zinc-200'}`}
           >
             <div className="flex items-start gap-4">
               <div
@@ -479,85 +531,26 @@ export function DetalhesPesquisa() {
                 <FileText size={32} />
               </div>
               <div className="space-y-1">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h1 className="text-2xl font-bold tracking-tight">
-                    {pesquisa?.titulo || 'Carregando...'}
-                  </h1>
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full font-semibold uppercase ${pesquisa?.status === 'ativa' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}
-                  >
-                    {pesquisa?.status || 'ativa'}
-                  </span>
-                </div>
-                <p
-                  className={`text-xs font-semibold`}
-                  style={{ color: 'var(--primary-color)' }}
-                >
-                  {pesquisa?.empresa || 'Empresa não informada'}
-                </p>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {template?.titulo ||
+                    template?.nome ||
+                    'Template Reutilizável'}
+                </h1>
                 <p
                   className={`text-sm ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}
                 >
-                  {pesquisa?.descricao || 'Sem descrição informada.'}
+                  {template?.descricao || 'Modelo reutilizável de perguntas'}
                 </p>
-
-                <div className="flex items-center gap-2 text-xs pt-2 text-zinc-400 flex-wrap">
-                  {pesquisa?.data_inicio && (
-                    <div className="flex items-center gap-1.5">
-                      <Calendar
-                        size={14}
-                        style={{ color: 'var(--primary-color)' }}
-                      />
-                      <span>
-                        {new Date(pesquisa.data_inicio).toLocaleDateString(
-                          'pt-BR'
-                        )}{' '}
-                        até{' '}
-                        {pesquisa.data_fim
-                          ? new Date(pesquisa.data_fim).toLocaleDateString(
-                              'pt-BR'
-                            )
-                          : 'Indeterminado'}
-                      </span>
-                    </div>
-                  )}
-
-                  {equipesVinculadas.length > 0 && (
-                    <>
-                      <span className="hidden sm:inline px-1 text-zinc-600">
-                        •
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <Users
-                          size={14}
-                          style={{ color: 'var(--primary-color)' }}
-                        />
-                        <span className="font-medium">
-                          Equipes:{' '}
-                          <span
-                            className={
-                              theme === 'dark'
-                                ? 'text-zinc-300'
-                                : 'text-zinc-700'
-                            }
-                          >
-                            {equipesVinculadas.map((e) => e.nome).join(', ')}
-                          </span>
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
               </div>
             </div>
 
             <button
-              onClick={() => setIsEditPesquisaModalOpen(true)}
-              className="py-2.5 px-5 text-white font-medium rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer self-start md:self-center flex-shrink-0"
+              onClick={() => setIsInjectModalOpen(true)}
+              className="py-2.5 px-5 text-white font-medium rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer"
               style={{ backgroundColor: 'var(--primary-color)' }}
             >
-              <Edit2 size={16} />
-              <span>Editar Pesquisa</span>
+              <Send size={16} />
+              <span>Adicionar a uma Pesquisa</span>
             </button>
           </div>
 
@@ -566,7 +559,7 @@ export function DetalhesPesquisa() {
             <div className="flex items-center gap-2">
               <Layers size={20} style={{ color: 'var(--primary-color)' }} />
               <h2 className="text-xl font-bold">
-                Perguntas da Pesquisa ({perguntas.length})
+                Perguntas do Template ({perguntas.length})
               </h2>
             </div>
             <button
@@ -586,38 +579,28 @@ export function DetalhesPesquisa() {
                 className={`p-8 rounded-2xl border text-center ${theme === 'dark' ? 'bg-[#1a1a1e] border-[#29292e]' : 'bg-white border-zinc-200'}`}
               >
                 <p className="text-sm opacity-60">
-                  Nenhuma pergunta cadastrada nesta pesquisa ainda.
+                  Nenhuma pergunta cadastrada neste template ainda.
                 </p>
               </div>
             ) : (
               perguntas.map((pergunta, index) => (
                 <div
                   key={pergunta.id}
-                  className={`p-4 md:p-5 rounded-2xl border shadow-md flex items-center justify-between gap-4 transition-all ${theme === 'dark' ? 'bg-[#1a1a1e] border-[#29292e]' : 'bg-white border-zinc-200'}`}
+                  className={`p-4 md:p-5 rounded-2xl border shadow-md flex items-center justify-between gap-4 ${theme === 'dark' ? 'bg-[#1a1a1e] border-[#29292e]' : 'bg-white border-zinc-200'}`}
                 >
                   <div className="flex items-center gap-4 min-w-0">
                     <div className="flex flex-col gap-1">
                       <button
                         onClick={() => handleMudarOrdem(index, 'subir')}
                         disabled={index === 0}
-                        className={`p-1 rounded-lg border transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
-                          theme === 'dark'
-                            ? 'bg-[#121214] border-[#29292e] hover:bg-zinc-800 text-zinc-300'
-                            : 'bg-zinc-50 border-zinc-200 hover:bg-zinc-200 text-zinc-700'
-                        }`}
-                        title="Subir ordem"
+                        className={`p-1 rounded-lg border transition-colors cursor-pointer disabled:opacity-30 ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-zinc-300' : 'bg-zinc-50 border-zinc-200'}`}
                       >
                         <ChevronUp size={16} />
                       </button>
                       <button
                         onClick={() => handleMudarOrdem(index, 'descer')}
                         disabled={index === perguntas.length - 1}
-                        className={`p-1 rounded-lg border transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
-                          theme === 'dark'
-                            ? 'bg-[#121214] border-[#29292e] hover:bg-zinc-800 text-zinc-300'
-                            : 'bg-zinc-50 border-zinc-200 hover:bg-zinc-200 text-zinc-700'
-                        }`}
-                        title="Descer ordem"
+                        className={`p-1 rounded-lg border transition-colors cursor-pointer disabled:opacity-30 ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-zinc-300' : 'bg-zinc-50 border-zinc-200'}`}
                       >
                         <ChevronDown size={16} />
                       </button>
@@ -625,6 +608,7 @@ export function DetalhesPesquisa() {
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {/* Exibe rigorosamente a ordem sequencial limpa baseada no índice index + 1 */}
                         <span className="text-xs font-bold px-2 py-0.5 rounded bg-zinc-500/10 text-zinc-400">
                           #{index + 1}
                         </span>
@@ -670,150 +654,7 @@ export function DetalhesPesquisa() {
         </main>
       </div>
 
-      {/* Modal para Editar Dados da Pesquisa */}
-      {isEditPesquisaModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div
-            className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl ${theme === 'dark' ? 'bg-[#1a1a1e] border-[#29292e]' : 'bg-white border-zinc-200'}`}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <Edit2 size={20} style={{ color: 'var(--primary-color)' }} />
-                Editar Dados da Pesquisa
-              </h2>
-              <button
-                onClick={() => setIsEditPesquisaModalOpen(false)}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdatePesquisa} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold opacity-80">
-                  Título
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={pesquisaForm.titulo}
-                  onChange={(e) =>
-                    setPesquisaForm({ ...pesquisaForm, titulo: e.target.value })
-                  }
-                  className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-white' : 'bg-zinc-50 border-zinc-300'}`}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold opacity-80">
-                  Empresa
-                </label>
-                <input
-                  type="text"
-                  value={pesquisaForm.empresa}
-                  onChange={(e) =>
-                    setPesquisaForm({
-                      ...pesquisaForm,
-                      empresa: e.target.value,
-                    })
-                  }
-                  className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-white' : 'bg-zinc-50 border-zinc-300'}`}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold opacity-80">
-                    Data Início
-                  </label>
-                  <input
-                    type="date"
-                    value={pesquisaForm.data_inicio}
-                    onChange={(e) =>
-                      setPesquisaForm({
-                        ...pesquisaForm,
-                        data_inicio: e.target.value,
-                      })
-                    }
-                    className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-white' : 'bg-zinc-50 border-zinc-300'}`}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold opacity-80">
-                    Data Fim
-                  </label>
-                  <input
-                    type="date"
-                    value={pesquisaForm.data_fim}
-                    onChange={(e) =>
-                      setPesquisaForm({
-                        ...pesquisaForm,
-                        data_fim: e.target.value,
-                      })
-                    }
-                    className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-white' : 'bg-zinc-50 border-zinc-300'}`}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold opacity-80">
-                  Status
-                </label>
-                <select
-                  value={pesquisaForm.status}
-                  onChange={(e) =>
-                    setPesquisaForm({ ...pesquisaForm, status: e.target.value })
-                  }
-                  className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-white' : 'bg-zinc-50 border-zinc-300'}`}
-                >
-                  <option value="rascunho">Rascunho</option>
-                  <option value="ativa">Ativa</option>
-                  <option value="pausada">Pausada</option>
-                  <option value="encerrada">Encerrada</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold opacity-80">
-                  Descrição
-                </label>
-                <textarea
-                  rows={3}
-                  value={pesquisaForm.descricao}
-                  onChange={(e) =>
-                    setPesquisaForm({
-                      ...pesquisaForm,
-                      descricao: e.target.value,
-                    })
-                  }
-                  className={`w-full px-4 py-3 rounded-xl text-sm border outline-none resize-none ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-white' : 'bg-zinc-50 border-zinc-300'}`}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsEditPesquisaModalOpen(false)}
-                  className={`flex-1 py-3 rounded-xl font-medium cursor-pointer ${theme === 'dark' ? 'bg-[#29292e] text-white' : 'bg-zinc-200 text-zinc-800'}`}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 rounded-xl text-white font-medium shadow-lg cursor-pointer"
-                  style={{ backgroundColor: 'var(--primary-color)' }}
-                >
-                  Salvar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Inteligente para Adicionar / Editar Pergunta */}
+      {/* Modal Adicionar / Editar Pergunta */}
       {isPerguntaModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div
@@ -828,7 +669,7 @@ export function DetalhesPesquisa() {
               </h2>
               <button
                 onClick={() => setIsPerguntaModalOpen(false)}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+                className="text-zinc-500 hover:text-zinc-300 cursor-pointer"
               >
                 <X size={24} />
               </button>
@@ -847,7 +688,7 @@ export function DetalhesPesquisa() {
                     setPerguntaForm({ ...perguntaForm, titulo: e.target.value })
                   }
                   className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-white' : 'bg-zinc-50 border-zinc-300'}`}
-                  placeholder="Ex: Em quem você votaria?"
+                  placeholder="Ex: Pergunta do template"
                 />
               </div>
 
@@ -887,7 +728,7 @@ export function DetalhesPesquisa() {
                       obrigatoria: e.target.checked ? 1 : 0,
                     })
                   }
-                  className="w-4 h-4 rounded border-zinc-300 text-orange-500 focus:ring-orange-500 cursor-pointer"
+                  className="w-4 h-4 rounded border-zinc-300 text-orange-500 cursor-pointer"
                 />
                 <label
                   htmlFor="obrigatoria"
@@ -931,35 +772,12 @@ export function DetalhesPesquisa() {
                           type="button"
                           onClick={() => handleRemoveOpcao(index)}
                           className="p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
-                          title="Excluir opção"
                         >
                           <Trash2 size={16} />
                         </button>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {perguntaForm.tipo === 'escala' && (
-                <div className="space-y-1.5 pt-2">
-                  <label className="text-sm font-semibold opacity-80">
-                    Intervalo da Escala Numérica
-                  </label>
-                  <select
-                    value={perguntaForm.escala_max}
-                    onChange={(e) =>
-                      setPerguntaForm({
-                        ...perguntaForm,
-                        escala_max: Number(e.target.value),
-                      })
-                    }
-                    className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-white' : 'bg-zinc-50 border-zinc-300'}`}
-                  >
-                    <option value={3}>1 a 3</option>
-                    <option value={5}>1 a 5</option>
-                    <option value={10}>1 a 10</option>
-                  </select>
                 </div>
               )}
 
@@ -984,6 +802,78 @@ export function DetalhesPesquisa() {
         </div>
       )}
 
+      {/* Modal Injetar na Pesquisa */}
+      {isInjectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div
+            className={`w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4 ${theme === 'dark' ? 'bg-[#1a1a1e] border-[#29292e]' : 'bg-white border-zinc-200'}`}
+          >
+            <h2 className="text-xl font-bold">Adicionar Template à Pesquisa</h2>
+            <p className="text-sm text-zinc-400">
+              Escolha a pesquisa de destino e onde deseja inserir as perguntas.
+            </p>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold">
+                Selecione a Pesquisa
+              </label>
+              <select
+                value={pesquisaSelecionadaId}
+                onChange={(e) =>
+                  setPesquisaSelecionadaId(Number(e.target.value))
+                }
+                className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${theme === 'dark' ? 'bg-[#121214] border-[#29292e] text-white' : 'bg-zinc-50 border-zinc-300'}`}
+              >
+                <option value="">Escolha uma pesquisa...</option>
+                {pesquisas.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.titulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold">
+                Posição de Inserção
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPosicaoInsercao('inicio')}
+                  className={`py-2.5 rounded-xl border text-sm font-medium cursor-pointer ${posicaoInsercao === 'inicio' ? 'bg-orange-500 text-white border-orange-500' : 'border-zinc-700'}`}
+                >
+                  No Início
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPosicaoInsercao('fim')}
+                  className={`py-2.5 rounded-xl border text-sm font-medium cursor-pointer ${posicaoInsercao === 'fim' ? 'bg-orange-500 text-white border-orange-500' : 'border-zinc-700'}`}
+                >
+                  No Final
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={() => setIsInjectModalOpen(false)}
+                className="flex-1 py-3 rounded-xl bg-zinc-700 text-white cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleInjetarNaPesquisa}
+                className="flex-1 py-3 rounded-xl text-white font-medium cursor-pointer"
+                style={{ backgroundColor: 'var(--primary-color)' }}
+              >
+                Confirmar e Injetar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div
@@ -993,27 +883,22 @@ export function DetalhesPesquisa() {
               <Trash2 size={24} />
             </div>
             <h3 className="text-lg font-bold">Confirmar Exclusão</h3>
-            <p
-              className={`text-sm ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}`}
-            >
-              Tem a certeza de que pretende excluir a pergunta{' '}
-              <span className="font-semibold text-white">
-                "{deleteModal.titulo}"
-              </span>
-              ? Esta ação não pode ser desfeita.
+            <p className="text-sm text-zinc-400">
+              Tem a certeza de que pretende excluir a pergunta "
+              {deleteModal.titulo}"?
             </p>
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() =>
                   setDeleteModal({ isOpen: false, id: null, titulo: '' })
                 }
-                className={`flex-1 py-2.5 rounded-xl font-medium cursor-pointer ${theme === 'dark' ? 'bg-[#29292e] text-white' : 'bg-zinc-200 text-zinc-800'}`}
+                className="flex-1 py-2.5 rounded-xl bg-zinc-700 text-white cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={executeDeletePergunta}
-                className="flex-1 py-2.5 rounded-xl text-white font-medium shadow-lg bg-red-600 hover:bg-red-700 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl text-white font-medium bg-red-600 hover:bg-red-700 cursor-pointer"
               >
                 Sim, Excluir
               </button>
@@ -1025,4 +910,4 @@ export function DetalhesPesquisa() {
   );
 }
 
-export default DetalhesPesquisa;
+export default DetalhesTemplate;
