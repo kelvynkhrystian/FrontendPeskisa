@@ -56,6 +56,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       });
   }, []);
 
+  // 1. ATUALIZA O TÍTULO DA PÁGINA GLOBALMENTE
+  useEffect(() => {
+    // Mantém o título da aba atualizado com o nome dinâmico da empresa
+    document.title = `Painel - ${nomeApp}`;
+  }, [nomeApp]);
+
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
@@ -77,13 +83,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('@Peskisa:primaryColor', primaryColor);
   }, [primaryColor]);
 
-  // Atualiza o Favicon globalmente sempre que o ícone, tema ou cor mudarem
+  // 2. ATUALIZA O FAVICON GLOBALMENTE (COM CORREÇÃO DE URL)
   useEffect(() => {
     let faviconUrl: string;
 
     if (iconeApp) {
-      faviconUrl = `${import.meta.env.VITE_API_URL}${iconeApp.startsWith('/') ? '' : '/'}${iconeApp}`;
+      // Limpeza de URL blindada contra barras duplas "//"
+      const baseUrl = (
+        import.meta.env.VITE_API_URL || 'http://localhost:3333'
+      ).replace(/\/$/, '');
+      const iconPath = iconeApp.replace(/^\//, '');
+      faviconUrl = `${baseUrl}/${iconPath}`;
     } else {
+      // Fallback para o SVG dinâmico caso não tenha ícone salvo
       const colors = colorValues[primaryColor] || colorValues.orange;
       const primaryColorHex = colors.main;
       const cardBgHex = theme === 'dark' ? '#1a1a1e' : '#ffffff';
@@ -108,6 +120,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       link.rel = 'icon';
       document.getElementsByTagName('head')[0].appendChild(link);
     }
+    // Muda o href quer a imagem seja o arquivo local ou o SVG dinâmico
     link.href = faviconUrl;
   }, [iconeApp, theme, primaryColor]);
 
