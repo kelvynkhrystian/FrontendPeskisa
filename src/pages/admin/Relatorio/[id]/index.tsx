@@ -467,7 +467,7 @@ export function DetalhesRelatorio() {
                       ) : resultado.tipo === 'verdadeiro_falso_com_opcoes' ? (
                         /* Renderização para Verdadeiro/Falso com sub-opções (Saúde, Educação, Bets) */
                         <div className="space-y-4 pl-0 md:pl-11">
-                          {resultado.subItens.map((sub: any, idx: number) => (
+                          {resultado.subItens?.map((sub: any, idx: number) => (
                             <div
                               key={idx}
                               className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121214] border-[#29292e]' : 'bg-zinc-50 border-zinc-200'}`}
