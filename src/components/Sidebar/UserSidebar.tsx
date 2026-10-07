@@ -185,31 +185,6 @@ export function UserSidebar({
               <Send size={20} className="shrink-0" />
               {sidebarOpen && <span>Envios</span>}
             </NavLink>
-
-            <NavLink
-              to="/user/envios"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
-                  isActive
-                    ? 'text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
-                }`
-              }
-              style={({ isActive }) =>
-                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
-              }
-            >
-              <Send size={20} className="shrink-0" />
-              {sidebarOpen && <span className="flex-1">Envios</span>}
-              {sidebarOpen && (
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold"
-                  title="Pendentes offline"
-                >
-                  0
-                </span>
-              )}
-            </NavLink>
           </nav>
         </div>
 
