@@ -13,6 +13,7 @@ import {
   Sun,
   Moon,
   Palette,
+  Download,
 } from 'lucide-react';
 import { configService } from '../../services/configService';
 
@@ -32,6 +33,10 @@ export function UserSidebar({
   const { theme, toggleTheme, setPrimaryColor } = useTheme();
   const [logoPadrao, setLogoPadrao] = useState<string | null>(null);
 
+  // ESTADOS PARA O PWA INSTALL PROMPT
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+
   useEffect(() => {
     configService
       .getConfig()
@@ -49,7 +54,38 @@ export function UserSidebar({
         }
       })
       .catch((error) => console.error('Erro ao buscar configurações:', error));
+
+    // Ouve o evento do navegador para permitir a instalação do PWA
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    window.addEventListener('appinstalled', () => {
+      setShowInstallBtn(false);
+      setDeferredPrompt(null);
+    });
+
+    return () => {
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handleBeforeInstallPrompt
+      );
+    };
   }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowInstallBtn(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   return (
     <aside
@@ -130,12 +166,24 @@ export function UserSidebar({
               }
             >
               <Search size={20} className="shrink-0" />
-              {sidebarOpen && <span className="flex-1">Pesquisas</span>}
-              {sidebarOpen && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500 text-white font-bold">
-                  4
-                </span>
-              )}
+              {sidebarOpen && <span>Pesquisas</span>}
+            </NavLink>
+
+            <NavLink
+              to="/user/envios"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-500/10'
+                }`
+              }
+              style={({ isActive }) =>
+                isActive ? { backgroundColor: 'var(--primary-color)' } : {}
+              }
+            >
+              <Send size={20} className="shrink-0" />
+              {sidebarOpen && <span>Envios</span>}
             </NavLink>
 
             <NavLink
@@ -188,6 +236,18 @@ export function UserSidebar({
               <Settings size={20} className="shrink-0" />
               {sidebarOpen && <span>Configurações</span>}
             </NavLink>
+
+            {/* BOTÃO DE INSTALAÇÃO DO PWA (Logo abaixo de Configurações) */}
+            {showInstallBtn && sidebarOpen && (
+              <button
+                onClick={handleInstallClick}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-white shadow-md transition-all cursor-pointer hover:opacity-90 animate-bounce mt-1"
+                style={{ backgroundColor: 'var(--primary-color)' }}
+              >
+                <Download size={20} className="shrink-0" />
+                <span>Instalar Aplicativo</span>
+              </button>
+            )}
 
             <NavLink
               to="/user/suporte"

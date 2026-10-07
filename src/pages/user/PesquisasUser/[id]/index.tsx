@@ -19,7 +19,7 @@ import {
   Calendar,
   Layers,
   Clock,
-  Hash,
+  // Hash,
 } from 'lucide-react';
 
 interface Opcao {

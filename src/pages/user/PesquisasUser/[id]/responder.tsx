@@ -10,7 +10,7 @@ import { api } from '../../../../services/api';
 import { dbLocal } from '../../../../services/dbLocal';
 import toast, { Toaster } from 'react-hot-toast';
 import {
-  FileText,
+  // FileText,
   ArrowLeft,
   CheckCircle,
   WifiOff,
