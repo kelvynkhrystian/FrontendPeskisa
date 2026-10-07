@@ -19,6 +19,7 @@ import { DashboardUser } from '../pages/user/DashboardUser';
 import { ConfigUser } from '../pages/user/ConfigUser';
 import { PesquisasUser } from '../pages/user/PesquisasUser';
 import { DetalhesPesquisaUser } from '../pages/user/PesquisasUser/[id]/index';
+import { ResponderPesquisa } from '../pages/user/PesquisasUser/[id]/responder';
 // import { Envios } from '../pages/Envios';
 
 export const router = createBrowserRouter([
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
       {
         path: '/user/pesquisas/:id',
         element: <DetalhesPesquisaUser />,
+      },
+      {
+        path: '/user/pesquisas/:id/responder',
+        element: <ResponderPesquisa />,
       },
 
       /* --- ROTAS FUTURAS DE USER (Descomente quando criar) ---

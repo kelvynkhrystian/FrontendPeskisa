@@ -40,7 +40,8 @@ interface Pergunta {
 interface SessaoEnviada {
   id: number;
   criado_em?: string;
-  atualizado_em?: string;
+  createdAt?: string;
+  created_at?: string;
   total_respostas?: number;
 }
 
@@ -246,11 +247,7 @@ export function DetalhesPesquisaUser() {
             </div>
 
             <button
-              onClick={() =>
-                toast('Funcionalidade de nova resposta em breve!', {
-                  icon: '💡',
-                })
-              }
+              onClick={() => navigate(`/user/pesquisas/${id}/responder`)}
               className="py-3 px-6 text-white font-medium rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:opacity-90 cursor-pointer flex-shrink-0"
               style={{ backgroundColor: 'var(--primary-color)' }}
             >
@@ -276,7 +273,7 @@ export function DetalhesPesquisaUser() {
               }
             >
               <Info size={16} />
-              <span>Info (Perguntas da Pesquisa)</span>
+              <span>Info</span>
             </button>
 
             <button
@@ -396,46 +393,44 @@ export function DetalhesPesquisaUser() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {sessoesEnviadas.map((sessao, index) => (
-                    <div
-                      key={sessao.id || index}
-                      className={`p-5 rounded-2xl border shadow-md flex items-center justify-between gap-4 ${
-                        theme === 'dark'
-                          ? 'bg-[#1a1a1e] border-[#29292e]'
-                          : 'bg-white border-zinc-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500">
-                          <CheckCircle size={20} />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-sm">
-                            Entrevista #{sessao.id}
-                          </h4>
-                          <p className="text-xs text-zinc-400 flex items-center gap-1.5 mt-1">
-                            <Clock size={13} />
-                            <span>
-                              Enviado em:{' '}
-                              {sessao.criado_em
-                                ? new Date(sessao.criado_em).toLocaleString(
-                                    'pt-BR'
-                                  )
-                                : 'Data não registada'}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
+                  {sessoesEnviadas.map((sessao: any, index) => {
+                    // Procura a data em todas as variações possíveis do banco/Sequelize
+                    const dataBruta =
+                      sessao.criada_em ||
+                      sessao.createdAt ||
+                      sessao.created_at ||
+                      sessao.data_criacao;
 
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-3 py-1 rounded-xl font-semibold bg-orange-500/10 text-orange-400 flex items-center gap-1">
-                          <Hash size={12} />
-                          {sessao.total_respostas || perguntas.length} questões
-                          respondidas
-                        </span>
+                    const dataFormatada = dataBruta
+                      ? new Date(dataBruta).toLocaleString('pt-BR')
+                      : 'Data não registada';
+
+                    return (
+                      <div
+                        key={sessao.id || index}
+                        className={`p-5 rounded-2xl border shadow-md flex items-center justify-between gap-4 ${
+                          theme === 'dark'
+                            ? 'bg-[#1a1a1e] border-[#29292e]'
+                            : 'bg-white border-zinc-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500">
+                            <CheckCircle size={20} />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm">
+                              Entrevista #{sessao.id}
+                            </h4>
+                            <p className="text-xs text-zinc-400 flex items-center gap-1.5 mt-1">
+                              <Clock size={13} />
+                              <span>Enviado em: {dataFormatada}</span>
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
