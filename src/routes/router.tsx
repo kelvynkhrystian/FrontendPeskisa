@@ -17,7 +17,8 @@ import { Config } from '../pages/admin/Config';
 // Páginas User
 import { DashboardUser } from '../pages/user/DashboardUser';
 import { ConfigUser } from '../pages/user/ConfigUser';
-// import { PesquisasUser } from '../pages/PesquisasUser';
+import { PesquisasUser } from '../pages/user/PesquisasUser';
+import { DetalhesPesquisaUser } from '../pages/user/PesquisasUser/[id]/index';
 // import { Envios } from '../pages/Envios';
 
 export const router = createBrowserRouter([
@@ -38,6 +39,15 @@ export const router = createBrowserRouter([
       {
         path: '/user/config',
         element: <ConfigUser />,
+      },
+
+      {
+        path: '/user/pesquisas',
+        element: <PesquisasUser />,
+      },
+      {
+        path: '/user/pesquisas/:id',
+        element: <DetalhesPesquisaUser />,
       },
 
       /* --- ROTAS FUTURAS DE USER (Descomente quando criar) ---
