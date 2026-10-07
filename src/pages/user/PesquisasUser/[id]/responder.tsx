@@ -69,38 +69,76 @@ export function ResponderPesquisa() {
     try {
       setLoading(true);
 
-      const resPesquisa = (await pesquisaService.getById)
-        ? await pesquisaService.getById(Number(id))
-        : null;
-      if (resPesquisa) {
-        setPesquisa(resPesquisa.pesquisa || resPesquisa);
-      } else {
-        const todas = await pesquisaService.getAll();
-        const lista = todas.pesquisas || todas || [];
-        setPesquisa(lista.find((p: any) => Number(p.id) === Number(id)));
+      let dadosPesquisa = null;
+      let listaPerguntas: Pergunta[] = [];
+      let todasOpcoes: any[] = [];
+
+      // 1. TENTA ONLINE
+      if (navigator.onLine) {
+        try {
+          const resPesquisa = (await pesquisaService.getById)
+            ? await pesquisaService.getById(Number(id))
+            : null;
+          if (resPesquisa) {
+            dadosPesquisa = resPesquisa.pesquisa || resPesquisa;
+          } else {
+            const todas = await pesquisaService.getAll();
+            const lista = todas.pesquisas || todas || [];
+            dadosPesquisa = lista.find((p: any) => Number(p.id) === Number(id));
+          }
+
+          const resPerguntas = await perguntaService.getAll({
+            pesquisa_id: id,
+          });
+          listaPerguntas = (
+            resPerguntas.perguntas ||
+            resPerguntas ||
+            []
+          ).filter((p: any) => Number(p.pesquisa_id) === Number(id));
+
+          const opcoesRes = await perguntaOpcaoService.getAll();
+          todasOpcoes = opcoesRes.opcoes || opcoesRes || [];
+        } catch (err) {
+          console.warn(
+            'Falha na rede ao carregar formulário, buscando local...',
+            err
+          );
+        }
       }
 
-      const resPerguntas = await perguntaService.getAll({ pesquisa_id: id });
-      const listaPerguntas: Pergunta[] =
-        resPerguntas.perguntas || resPerguntas || [];
-      const filtradas = listaPerguntas.filter(
-        (p: any) => Number(p.pesquisa_id) === Number(id)
+      // 2. FALLBACK OFFLINE (ou se a rede falhar)
+      if (!dadosPesquisa) {
+        dadosPesquisa = await dbLocal.pesquisas.get(Number(id));
+      }
+
+      if (listaPerguntas.length === 0) {
+        listaPerguntas = await dbLocal.perguntas
+          .where('pesquisa_id')
+          .equals(Number(id))
+          .toArray();
+      }
+
+      // Associa as opções a cada pergunta (da API ou do Dexie local)
+      for (const p of listaPerguntas) {
+        const opcoesLocais = await dbLocal.opcoes
+          .where('pergunta_id')
+          .equals(Number(p.id))
+          .toArray();
+        const opcoesApi = todasOpcoes.filter(
+          (o: any) => Number(o.pergunta_id) === Number(p.id)
+        );
+
+        p.opcoes = (opcoesApi.length > 0 ? opcoesApi : opcoesLocais).sort(
+          (a: any, b: any) => (a.ordem || 0) - (b.ordem || 0)
+        );
+      }
+
+      setPesquisa(dadosPesquisa || { id, titulo: 'Pesquisa Offline' });
+      setPerguntas(
+        listaPerguntas.sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
       );
-
-      try {
-        const opcoesRes = await perguntaOpcaoService.getAll();
-        const todasOpcoes = opcoesRes.opcoes || opcoesRes || [];
-        filtradas.forEach((p) => {
-          p.opcoes = todasOpcoes
-            .filter((o: any) => Number(o.pergunta_id) === Number(p.id))
-            .sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
-        });
-      } catch (err) {
-        console.error('Erro ao carregar opções', err);
-      }
-
-      setPerguntas(filtradas.sort((a, b) => (a.ordem || 0) - (b.ordem || 0)));
     } catch (error) {
+      console.error(error);
       toast.error('Erro ao carregar formulário da pesquisa.');
     } finally {
       setLoading(false);
@@ -145,17 +183,11 @@ export function ResponderPesquisa() {
 
     setIsSubmitting(true);
 
-    // 1. EXTRAÇÃO BLINDADA DO USUÁRIO
     const userStorage = localStorage.getItem('user');
     const userObj = userStorage ? JSON.parse(userStorage) : {};
-
-    // Se não encontrar o ID (por causa do erro 404 no auth/me), força o ID 1 para testes
     const usuarioId = userObj.id ? Number(userObj.id) : 1;
-
     const equipeRawId = userObj.equipe_id || userObj.equipeId;
     const equipeId = equipeRawId ? Number(equipeRawId) : null;
-
-    // 2. DISPOSITIVO CURTO (< 20 caracteres)
     const dispositivoNome = window.innerWidth <= 768 ? 'Mobile' : 'Desktop';
 
     const payloadRespostas = perguntas.map((p) => {
@@ -182,17 +214,13 @@ export function ResponderPesquisa() {
 
     try {
       if (navigator.onLine) {
-        // FLUXO ONLINE
         await api.post('/api/resposta-sessoes', payloadSessao);
-
         setModal({ isOpen: true, type: 'online' });
       } else {
-        // FLUXO OFFLINE
         await dbLocal.respostas_offline.add({
           ...payloadSessao,
           pesquisa_titulo: pesquisa?.titulo || 'Pesquisa sem título',
         });
-
         setModal({ isOpen: true, type: 'offline' });
       }
     } catch (error: any) {
@@ -212,7 +240,6 @@ export function ResponderPesquisa() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Cores dinâmicas para bordas e fundos baseado no tema e na seleção
   const getBordaSelecionada = (selecionado: boolean) =>
     selecionado
       ? 'var(--primary-color)'
@@ -231,11 +258,6 @@ export function ResponderPesquisa() {
           placeholder="Digite a resposta aqui..."
           rows={3}
           className={`w-full p-3 rounded-xl text-sm border outline-none resize-none transition-colors ${theme === 'dark' ? 'bg-[#121214] border-[#29292e]' : 'bg-zinc-50 border-zinc-300'}`}
-          style={
-            {
-              focusVisible: { borderColor: 'var(--primary-color)' },
-            } as React.CSSProperties
-          }
         />
       );
     }
@@ -540,7 +562,6 @@ export function ResponderPesquisa() {
         </main>
       </div>
 
-      {/* MODAL DE SUCESSO */}
       {modal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div

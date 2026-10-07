@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { UserSidebar } from '../../../components/Sidebar/UserSidebar';
 import { Header } from '../../../components/Header/Header';
+import { syncService } from '../../../services/syncService';
 
 export function DashboardUser() {
   const { theme, nomeApp } = useTheme();
@@ -18,6 +19,10 @@ export function DashboardUser() {
   useEffect(() => {
     document.title = `Painel - ${nomeApp}`;
   }, [nomeApp]);
+
+  useEffect(() => {
+    syncService.baixarDadosParaOffline();
+  }, []);
 
   const stats = {
     pesquisasDisponiveis: 4,

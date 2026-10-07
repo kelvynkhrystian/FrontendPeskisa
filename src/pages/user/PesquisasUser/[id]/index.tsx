@@ -8,6 +8,7 @@ import { perguntaService } from '../../../../services/perguntaService';
 import { perguntaOpcaoService } from '../../../../services/perguntaOpcaoService';
 import { api } from '../../../../services/api';
 import toast, { Toaster } from 'react-hot-toast';
+import { dbLocal } from '../../../../services/dbLocal';
 import {
   FileText,
   ArrowLeft,
@@ -69,40 +70,71 @@ export function DetalhesPesquisaUser() {
     try {
       setLoading(true);
 
-      const resPesquisa = (await pesquisaService.getById)
-        ? await pesquisaService.getById(Number(id))
-        : null;
-      if (resPesquisa) {
-        setPesquisa(resPesquisa.pesquisa || resPesquisa);
-      } else {
-        const todas = await pesquisaService.getAll();
-        const lista = todas.pesquisas || todas || [];
-        const encontrada = lista.find((p: any) => Number(p.id) === Number(id));
-        setPesquisa(encontrada || { id, titulo: 'Detalhes da Pesquisa' });
+      let dadosPesquisa = null;
+      let listaPerguntas: Pergunta[] = [];
+      let todasOpcoes: any[] = [];
+
+      // 1. TENTATIVA ONLINE
+      if (navigator.onLine) {
+        try {
+          // Como o getById não existe no service, buscamos todas e filtramos pelo ID
+          const resPesquisas = await pesquisaService.getAll();
+          const lista = resPesquisas.pesquisas || resPesquisas || [];
+          dadosPesquisa = lista.find((p: any) => Number(p.id) === Number(id));
+
+          // Busca as perguntas da pesquisa
+          const resPerguntas = await perguntaService.getAll({
+            pesquisa_id: id,
+          });
+          listaPerguntas = (
+            resPerguntas.perguntas ||
+            resPerguntas ||
+            []
+          ).filter((p: any) => Number(p.pesquisa_id) === Number(id));
+
+          // Busca as opções
+          const opcoesRes = await perguntaOpcaoService.getAll();
+          todasOpcoes = opcoesRes.opcoes || opcoesRes || [];
+        } catch (err) {
+          console.warn('Falha na rede, alternando para o cache local...', err);
+        }
       }
 
-      const resPerguntas = await perguntaService.getAll({ pesquisa_id: id });
-      const listaPerguntas: Pergunta[] =
-        resPerguntas.perguntas || resPerguntas || [];
-      const filtradas = listaPerguntas.filter(
-        (p: any) => Number(p.pesquisa_id) === Number(id)
+      // 2. FALLBACK PARA O OFFLINE (ou se a API falhou)
+      if (!dadosPesquisa) {
+        dadosPesquisa = await dbLocal.pesquisas.get(Number(id));
+      }
+
+      if (listaPerguntas.length === 0) {
+        listaPerguntas = await dbLocal.perguntas
+          .where('pesquisa_id')
+          .equals(Number(id))
+          .toArray();
+      }
+
+      // Associa as opções às perguntas
+      for (const p of listaPerguntas) {
+        if (!p.opcoes || p.opcoes.length === 0) {
+          const opcoesLocais = await dbLocal.opcoes
+            .where('pergunta_id')
+            .equals(Number(p.id))
+            .toArray();
+          const opcoesApi = todasOpcoes.filter(
+            (o: any) => Number(o.pergunta_id) === Number(p.id)
+          );
+
+          p.opcoes = (opcoesApi.length > 0 ? opcoesApi : opcoesLocais).sort(
+            (a: any, b: any) => (a.ordem || 0) - (b.ordem || 0)
+          );
+        }
+      }
+
+      setPesquisa(dadosPesquisa || { id, titulo: 'Pesquisa' });
+      setPerguntas(
+        listaPerguntas.sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
       );
 
-      try {
-        const opcoesRes = await perguntaOpcaoService.getAll();
-        const todasOpcoes = opcoesRes.opcoes || opcoesRes || [];
-
-        filtradas.forEach((p) => {
-          p.opcoes = todasOpcoes
-            .filter((o: any) => Number(o.pergunta_id) === Number(p.id))
-            .sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
-        });
-      } catch (err) {
-        console.error('Erro ao carregar opções:', err);
-      }
-
-      setPerguntas(filtradas.sort((a, b) => (a.ordem || 0) - (b.ordem || 0)));
-
+      // Carrega as sessões enviadas
       try {
         const resSessoes = await api
           .get(`/api/resposta-sessoes?pesquisa_id=${id}`)
@@ -113,7 +145,7 @@ export function DetalhesPesquisaUser() {
         setSessoesEnviadas([]);
       }
     } catch (error) {
-      console.error('Erro ao carregar dados da pesquisa:', error);
+      console.error('Erro crítico ao carregar detalhes da pesquisa:', error);
       toast.error('Erro ao carregar informações da pesquisa.');
     } finally {
       setLoading(false);

@@ -6,6 +6,7 @@ import { Header } from '../../../components/Header/Header';
 import { pesquisaService } from '../../../services/pesquisaService';
 import { pesquisaEquipeService } from '../../../services/pesquisaEquipeService';
 import { api } from '../../../services/api';
+import { dbLocal } from '../../../services/dbLocal'; // IMPORTAMOS O BANCO LOCAL
 import toast, { Toaster } from 'react-hot-toast';
 import {
   FileText,
@@ -61,22 +62,47 @@ export function PesquisasUser() {
         }
       }
 
-      const [resPesquisas, resRelacoes] = await Promise.all([
-        pesquisaService.getAll(),
-        pesquisaEquipeService.getAll
-          ? pesquisaEquipeService.getAll()
-          : api.get('/api/pesquisa-equipes').catch(() => ({ data: [] })),
-      ]);
+      let listaPesquisas: Pesquisa[] = [];
+      let relacoes: any[] = [];
 
-      const listaPesquisas: Pesquisa[] =
-        resPesquisas.pesquisas || resPesquisas || [];
-      const relacoes = resRelacoes.data || resRelacoes || [];
+      if (navigator.onLine) {
+        // FLUXO ONLINE: Busca da API e atualiza o cache no IndexedDB
+        try {
+          const [resPesquisas, resRelacoes] = await Promise.all([
+            pesquisaService.getAll(),
+            pesquisaEquipeService.getAll
+              ? pesquisaEquipeService.getAll()
+              : api.get('/api/pesquisa-equipes').catch(() => ({ data: [] })),
+          ]);
+
+          listaPesquisas = resPesquisas.pesquisas || resPesquisas || [];
+          relacoes = resRelacoes.data || resRelacoes || [];
+
+          // Salva/atualiza no Dexie para garantir cache offline fresco
+          if (listaPesquisas.length > 0) {
+            await dbLocal.pesquisas.clear();
+            await dbLocal.pesquisas.bulkPut(listaPesquisas);
+          }
+        } catch (apiError) {
+          console.warn(
+            'Falha na API online, tentando recuperar do Dexie local...',
+            apiError
+          );
+          listaPesquisas = await dbLocal.pesquisas.toArray();
+        }
+      } else {
+        // FLUXO OFFLINE: Puxa diretamente do IndexedDB local
+        listaPesquisas = await dbLocal.pesquisas.toArray();
+        toast('Modo Offline: A carregar pesquisas guardadas no dispositivo.', {
+          icon: '📦',
+        });
+      }
 
       // Filtra rascunhos e valida a equipe do utilizador
       const pesquisasFiltradas = listaPesquisas.filter((p) => {
         if (!p.status || p.status.toLowerCase() === 'rascunho') return false;
 
-        if (usuarioEquipeId) {
+        if (usuarioEquipeId && relacoes.length > 0) {
           const estaNaEquipe = relacoes.some(
             (r: any) =>
               Number(r.pesquisa_id) === Number(p.id) &&
@@ -91,7 +117,13 @@ export function PesquisasUser() {
       setPesquisas(pesquisasFiltradas);
     } catch (error) {
       console.error('Erro ao carregar pesquisas:', error);
-      toast.error('Erro ao carregar pesquisas disponíveis.');
+      // Fallback supremo de segurança caso tudo falhe
+      try {
+        const listaLocal = await dbLocal.pesquisas.toArray();
+        setPesquisas(listaLocal);
+      } catch {
+        toast.error('Erro ao carregar pesquisas disponíveis.');
+      }
     } finally {
       setLoading(false);
     }
@@ -153,7 +185,6 @@ export function PesquisasUser() {
         />
 
         <main className="p-6 md:p-8 space-y-6 pb-12 overflow-y-auto">
-          {/* Título, Subtítulo e Input de Pesquisa abaixo */}
           <div className="space-y-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
@@ -209,7 +240,6 @@ export function PesquisasUser() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {pesquisasFiltradas.map((pesquisa) => {
-                // Validação de Vencimento por Data Fim
                 const hoje = new Date();
                 hoje.setHours(0, 0, 0, 0);
 
@@ -219,8 +249,6 @@ export function PesquisasUser() {
                 if (dataFim) dataFim.setHours(0, 0, 0, 0);
 
                 const passouDaData = dataFim ? dataFim < hoje : false;
-
-                // Se passou da data fim, força o status para 'encerrada' independentemente do banco
                 const statusReal = passouDaData ? 'encerrada' : pesquisa.status;
                 const isAtiva = statusReal?.toLowerCase() === 'ativa';
 

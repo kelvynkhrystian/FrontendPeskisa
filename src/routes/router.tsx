@@ -20,7 +20,7 @@ import { ConfigUser } from '../pages/user/ConfigUser';
 import { PesquisasUser } from '../pages/user/PesquisasUser';
 import { DetalhesPesquisaUser } from '../pages/user/PesquisasUser/[id]/index';
 import { ResponderPesquisa } from '../pages/user/PesquisasUser/[id]/responder';
-// import { Envios } from '../pages/Envios';
+import { EnviosUser } from '../pages/user/Envios';
 
 export const router = createBrowserRouter([
   // 🔓 Rota Pública
@@ -54,17 +54,10 @@ export const router = createBrowserRouter([
         path: '/user/pesquisas/:id/responder',
         element: <ResponderPesquisa />,
       },
-
-      /* --- ROTAS FUTURAS DE USER (Descomente quando criar) ---
       {
-        path: '/user/pesquisas',
-        element: <PesquisasUser />,
+        path: '/user/envios',
+        element: <EnviosUser />,
       },
-      {
-        path: '/envios',
-        element: <Envios />,
-      },
-      ------------------------------------------------------- */
     ],
   },
 
