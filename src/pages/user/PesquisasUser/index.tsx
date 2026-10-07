@@ -4,7 +4,6 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { UserSidebar } from '../../../components/Sidebar/UserSidebar';
 import { Header } from '../../../components/Header/Header';
 import { pesquisaService } from '../../../services/pesquisaService';
-import { pesquisaEquipeService } from '../../../services/pesquisaEquipeService';
 import { api } from '../../../services/api';
 import { dbLocal } from '../../../services/dbLocal'; // IMPORTAMOS O BANCO LOCAL
 import toast, { Toaster } from 'react-hot-toast';
