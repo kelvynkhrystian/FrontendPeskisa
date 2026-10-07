@@ -64,34 +64,30 @@ export function PesquisasUser() {
 
       let listaPesquisas: Pesquisa[] = [];
       let relacoes: any[] = [];
+      let resPesquisas: any;
+      let resRelacoes: any;
 
       if (navigator.onLine) {
-        // FLUXO ONLINE: Busca da API e atualiza o cache no IndexedDB
         try {
-          const [resPesquisas, resRelacoes] = await Promise.all([
+          const results = await Promise.all([
             pesquisaService.getAll(),
-            pesquisaEquipeService.getAll
-              ? pesquisaEquipeService.getAll()
-              : api.get('/api/pesquisa-equipes').catch(() => ({ data: [] })),
+            api.get('/api/pesquisa-equipes').catch(() => ({ data: [] })),
           ]);
+          resPesquisas = results[0];
+          resRelacoes = results[1];
 
           listaPesquisas = resPesquisas.pesquisas || resPesquisas || [];
           relacoes = resRelacoes.data || resRelacoes || [];
 
-          // Salva/atualiza no Dexie para garantir cache offline fresco
           if (listaPesquisas.length > 0) {
             await dbLocal.pesquisas.clear();
             await dbLocal.pesquisas.bulkPut(listaPesquisas);
           }
         } catch (apiError) {
-          console.warn(
-            'Falha na API online, tentando recuperar do Dexie local...',
-            apiError
-          );
+          console.warn('Falha na API, recuperando do Dexie...', apiError);
           listaPesquisas = await dbLocal.pesquisas.toArray();
         }
       } else {
-        // FLUXO OFFLINE: Puxa diretamente do IndexedDB local
         listaPesquisas = await dbLocal.pesquisas.toArray();
         toast('Modo Offline: A carregar pesquisas guardadas no dispositivo.', {
           icon: '📦',

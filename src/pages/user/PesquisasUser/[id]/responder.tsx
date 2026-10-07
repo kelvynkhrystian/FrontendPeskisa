@@ -76,28 +76,21 @@ export function ResponderPesquisa() {
       // 1. TENTA ONLINE
       if (navigator.onLine) {
         try {
-          const resPesquisa = (await pesquisaService.getById)
-            ? await pesquisaService.getById(Number(id))
-            : null;
-          if (resPesquisa) {
-            dadosPesquisa = resPesquisa.pesquisa || resPesquisa;
-          } else {
-            const todas = await pesquisaService.getAll();
-            const lista = todas.pesquisas || todas || [];
-            dadosPesquisa = lista.find((p: any) => Number(p.id) === Number(id));
-          }
+          const todas = await pesquisaService.getAll();
+          const lista = (todas as any).pesquisas || todas || [];
+          dadosPesquisa = lista.find((p: any) => Number(p.id) === Number(id));
 
           const resPerguntas = await perguntaService.getAll({
             pesquisa_id: id,
           });
           listaPerguntas = (
-            resPerguntas.perguntas ||
+            (resPerguntas as any).perguntas ||
             resPerguntas ||
             []
           ).filter((p: any) => Number(p.pesquisa_id) === Number(id));
 
           const opcoesRes = await perguntaOpcaoService.getAll();
-          todasOpcoes = opcoesRes.opcoes || opcoesRes || [];
+          todasOpcoes = (opcoesRes as any).opcoes || opcoesRes || [];
         } catch (err) {
           console.warn(
             'Falha na rede ao carregar formulário, buscando local...',
@@ -118,7 +111,7 @@ export function ResponderPesquisa() {
           .toArray();
       }
 
-      // Associa as opções a cada pergunta (da API ou do Dexie local)
+      // Associa as opções a cada pergunta
       for (const p of listaPerguntas) {
         const opcoesLocais = await dbLocal.opcoes
           .where('pergunta_id')

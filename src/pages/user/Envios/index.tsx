@@ -13,7 +13,6 @@ import {
   Calendar,
   Layers,
   CheckCircle2,
-  AlertCircle,
 } from 'lucide-react';
 
 export function EnviosUser() {

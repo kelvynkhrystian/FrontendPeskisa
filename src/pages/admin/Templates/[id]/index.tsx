@@ -127,7 +127,7 @@ export function DetalhesTemplate() {
         (a: PerguntaTemplate, b: PerguntaTemplate) =>
           (a.ordem || 0) - (b.ordem || 0)
       );
-      const normalizadas = ordenadas.map((p, idx) => ({
+      const normalizadas = ordenadas.map((p: any, idx: any) => ({
         ...p,
         ordem: idx + 1,
       }));
