@@ -159,7 +159,7 @@ export function EnviosUser() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <Header
-          title="Gestão de Envios (Offline)"
+          title="Gestão de Envios"
           setMobileMenuOpen={setMobileMenuOpen}
         />
 
