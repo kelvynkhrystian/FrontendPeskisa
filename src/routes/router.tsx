@@ -10,7 +10,8 @@ import { Dashboard } from '../pages/admin/Dashboard';
 import { Pesquisas } from '../pages/admin/Pesquisas';
 import { DetalhesPesquisa } from '../pages/admin/Pesquisas/[id]';
 import { DetalhesTemplate } from '../pages/admin/Templates/[id]';
-import { Relatorio } from '../pages/admin/Relatorio';
+import { RelatoriosList } from '../pages/admin/Relatorio/index';
+import { DetalhesRelatorio } from '../pages/admin/Relatorio/[id]/index';
 import { Equipes } from '../pages/admin/Equipes';
 import { Config } from '../pages/admin/Config';
 
@@ -81,9 +82,14 @@ export const router = createBrowserRouter([
         path: '/admin/templates/:id',
         element: <DetalhesTemplate />,
       },
+
       {
         path: '/admin/relatorios',
-        element: <Relatorio />,
+        element: <RelatoriosList />,
+      },
+      {
+        path: '/admin/relatorios/:id',
+        element: <DetalhesRelatorio />,
       },
       {
         path: '/admin/equipes',

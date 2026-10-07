@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { UserSidebar } from '../../../../components/Sidebar/UserSidebar';
@@ -10,7 +10,6 @@ import { api } from '../../../../services/api';
 import { dbLocal } from '../../../../services/dbLocal';
 import toast, { Toaster } from 'react-hot-toast';
 import {
-  // FileText,
   ArrowLeft,
   CheckCircle,
   WifiOff,
@@ -57,6 +56,10 @@ export function ResponderPesquisa() {
 
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Trava síncrona para evitar duplo envio/duplicação
+  const isSubmittingRef = useRef(false);
+
   const [modal, setModal] = useState<ModalState>({ isOpen: false, type: null });
 
   useEffect(() => {
@@ -73,7 +76,6 @@ export function ResponderPesquisa() {
       let listaPerguntas: Pergunta[] = [];
       let todasOpcoes: any[] = [];
 
-      // 1. TENTA ONLINE
       if (navigator.onLine) {
         try {
           const todas = await pesquisaService.getAll();
@@ -99,7 +101,6 @@ export function ResponderPesquisa() {
         }
       }
 
-      // 2. FALLBACK OFFLINE (ou se a rede falhar)
       if (!dadosPesquisa) {
         dadosPesquisa = await dbLocal.pesquisas.get(Number(id));
       }
@@ -111,7 +112,6 @@ export function ResponderPesquisa() {
           .toArray();
       }
 
-      // Associa as opções a cada pergunta
       for (const p of listaPerguntas) {
         const opcoesLocais = await dbLocal.opcoes
           .where('pergunta_id')
@@ -158,7 +158,11 @@ export function ResponderPesquisa() {
   const handleSubmeter = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validação de campos obrigatórios
+    // Bloqueio imediato para evitar duplo clique
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
     for (const p of perguntas) {
       if (p.obrigatoria === 1) {
         const resp = respostas[p.id];
@@ -166,15 +170,31 @@ export function ResponderPesquisa() {
           resp === undefined ||
           resp === null ||
           resp === '' ||
-          (Array.isArray(resp) && resp.length === 0)
+          (Array.isArray(resp) && resp.length === 0) ||
+          (typeof resp === 'object' && Object.keys(resp).length === 0)
         ) {
           toast.error(`A pergunta "${p.titulo}" é obrigatória.`);
+          isSubmittingRef.current = false;
+          setIsSubmitting(false);
           return;
+        }
+
+        if (p.tipo === 'verdadeiro_falso' && p.opcoes && p.opcoes.length > 0) {
+          const respObj = resp || {};
+          for (const op of p.opcoes) {
+            const key = op.opcao_texto;
+            if (!respObj[key]) {
+              toast.error(
+                `Responda Verdadeiro ou Falso para todas as opções em "${p.titulo}".`
+              );
+              isSubmittingRef.current = false;
+              setIsSubmitting(false);
+              return;
+            }
+          }
         }
       }
     }
-
-    setIsSubmitting(true);
 
     const userStorage = localStorage.getItem('user');
     const userObj = userStorage ? JSON.parse(userStorage) : {};
@@ -184,14 +204,32 @@ export function ResponderPesquisa() {
     const dispositivoNome = window.innerWidth <= 768 ? 'Mobile' : 'Desktop';
 
     const payloadRespostas = perguntas.map((p) => {
-      const isArray = Array.isArray(respostas[p.id]);
-      const valorResposta = isArray
-        ? JSON.stringify(respostas[p.id])
-        : respostas[p.id];
+      const resp = respostas[p.id];
+
+      let valorResposta = null;
+      if (
+        resp !== undefined &&
+        resp !== null &&
+        resp !== '' &&
+        resp !== 'undefined'
+      ) {
+        if (
+          p.tipo === 'verdadeiro_falso' &&
+          p.opcoes &&
+          p.opcoes.length > 0 &&
+          typeof resp === 'object'
+        ) {
+          valorResposta = resp; // Envia o objeto diretamente para o backend processar em JSON
+        } else if (Array.isArray(resp) || typeof resp === 'object') {
+          valorResposta = JSON.stringify(resp);
+        } else {
+          valorResposta = String(resp);
+        }
+      }
 
       return {
         pergunta_id: p.id,
-        valor: valorResposta || null,
+        resposta: valorResposta,
         tipo: p.tipo,
       };
     });
@@ -222,6 +260,7 @@ export function ResponderPesquisa() {
         error.response?.data?.message ||
         'Erro ao salvar a resposta. Verifique a validação do backend.';
       toast.error(msgErro);
+      isSubmittingRef.current = false; // Libera caso dê erro na API
     } finally {
       setIsSubmitting(false);
     }
@@ -229,6 +268,7 @@ export function ResponderPesquisa() {
 
   const resetForm = () => {
     setRespostas({});
+    isSubmittingRef.current = false;
     setModal({ isOpen: false, type: null });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -256,41 +296,110 @@ export function ResponderPesquisa() {
     }
 
     if (pergunta.tipo === 'verdadeiro_falso') {
-      return (
-        <div className="flex gap-4">
-          {['Verdadeiro', 'Falso'].map((op) => {
-            const selecionado = respostas[pId] === op;
-            return (
-              <label
-                key={op}
-                className={`flex-1 flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${theme === 'dark' ? 'bg-[#121214]' : 'bg-zinc-50'}`}
-                style={{ borderColor: getBordaSelecionada(selecionado) }}
-              >
-                <input
-                  type="radio"
-                  name={`p_${pId}`}
-                  value={op}
-                  checked={selecionado}
-                  onChange={() => handleChange(pId, op, 'verdadeiro_falso')}
-                  className="hidden"
-                />
-                <div
-                  className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
-                  style={{
-                    borderColor: selecionado
-                      ? 'var(--primary-color)'
-                      : '#a1a1aa',
-                  }}
+      const opcoes = pergunta.opcoes || [];
+
+      if (opcoes.length === 0) {
+        return (
+          <div className="flex gap-4">
+            {['Verdadeiro', 'Falso'].map((op) => {
+              const selecionado = respostas[pId] === op;
+              return (
+                <label
+                  key={op}
+                  className={`flex-1 flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${theme === 'dark' ? 'bg-[#121214]' : 'bg-zinc-50'}`}
+                  style={{ borderColor: getBordaSelecionada(selecionado) }}
                 >
-                  {selecionado && (
-                    <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: 'var(--primary-color)' }}
-                    />
-                  )}
+                  <input
+                    type="radio"
+                    name={`p_${pId}`}
+                    value={op}
+                    checked={selecionado}
+                    onChange={() => handleChange(pId, op, 'verdadeiro_falso')}
+                    className="hidden"
+                  />
+                  <div
+                    className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
+                    style={{
+                      borderColor: selecionado
+                        ? 'var(--primary-color)'
+                        : '#a1a1aa',
+                    }}
+                  >
+                    {selecionado && (
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: 'var(--primary-color)' }}
+                      />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium">{op}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+      }
+
+      const respAtual = respostas[pId] || {};
+      return (
+        <div className="space-y-4">
+          {opcoes.map((op) => {
+            const opKey = op.opcao_texto;
+            const valorAtual = respAtual[opKey];
+
+            return (
+              <div
+                key={op.id}
+                className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121214] border-[#29292e]' : 'bg-zinc-50 border-zinc-200'}`}
+              >
+                <span className="text-sm font-semibold block">
+                  {op.opcao_texto}
+                </span>
+                <div className="flex gap-4">
+                  {['Verdadeiro', 'Falso'].map((vf) => {
+                    const selecionado = valorAtual === vf;
+                    return (
+                      <label
+                        key={vf}
+                        className={`flex-1 flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-all ${theme === 'dark' ? 'bg-[#1a1a1e]' : 'bg-white'}`}
+                        style={{
+                          borderColor: getBordaSelecionada(selecionado),
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name={`p_${pId}_op_${op.id}`}
+                          value={vf}
+                          checked={selecionado}
+                          onChange={() => {
+                            const novoObjeto = { ...respAtual, [opKey]: vf };
+                            handleChange(pId, novoObjeto, 'verdadeiro_falso');
+                          }}
+                          className="hidden"
+                        />
+                        <div
+                          className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
+                          style={{
+                            borderColor: selecionado
+                              ? 'var(--primary-color)'
+                              : '#a1a1aa',
+                          }}
+                        >
+                          {selecionado && (
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{
+                                backgroundColor: 'var(--primary-color)',
+                              }}
+                            />
+                          )}
+                        </div>
+                        <span className="text-xs font-medium">{vf}</span>
+                      </label>
+                    );
+                  })}
                 </div>
-                <span className="text-sm font-medium">{op}</span>
-              </label>
+              </div>
             );
           })}
         </div>

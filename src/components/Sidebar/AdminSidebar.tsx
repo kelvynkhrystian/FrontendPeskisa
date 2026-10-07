@@ -5,7 +5,6 @@ import { LogoutButton } from '../../components/logout/Logout';
 import {
   LayoutDashboard,
   Users,
-  FileText,
   Settings,
   HelpCircle,
   Search,
@@ -14,6 +13,7 @@ import {
   Sun,
   Moon,
   Palette,
+  BarChart3,
 } from 'lucide-react';
 import { configService } from '../../services/configService';
 
@@ -96,7 +96,7 @@ export function AdminSidebar({
         </button>
       </div>
 
-      {/* Links de navegação com NavLink para controle de estado ativo */}
+      {/* Links de navegação */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin">
         <div>
           {sidebarOpen && (
@@ -169,7 +169,7 @@ export function AdminSidebar({
                 isActive ? { backgroundColor: 'var(--primary-color)' } : {}
               }
             >
-              <FileText size={20} className="shrink-0" />
+              <BarChart3 size={20} className="shrink-0" />
               {sidebarOpen && <span>Relatórios</span>}
             </NavLink>
           </nav>
@@ -199,7 +199,7 @@ export function AdminSidebar({
               {sidebarOpen && <span>Configurações</span>}
             </NavLink>
 
-            {/* Botão de Suporte redirecionando para o WhatsApp */}
+            {/* Suporte */}
             <a
               href="https://wa.me/5598991054292?text=Olá,%20preciso%20de%20suporte%20no%20sistema%20Peskisa!"
               target="_blank"
@@ -209,12 +209,15 @@ export function AdminSidebar({
               <HelpCircle size={20} className="shrink-0 text-emerald-500" />
               {sidebarOpen && <span>Suporte</span>}
             </a>
+
+            {/* Sair colocado diretamente abaixo de Suporte */}
+            <LogoutButton sidebarOpen={sidebarOpen} />
           </nav>
         </div>
       </div>
 
-      {/* Rodapé da Sidebar */}
-      <div className="p-3 border-t border-zinc-500/15 space-y-3">
+      {/* Rodapé da Sidebar (Apenas opções de Aparência) */}
+      <div className="p-3 border-t border-zinc-500/15">
         {sidebarOpen ? (
           <div className="p-3 rounded-xl bg-zinc-500/5 border border-zinc-500/10 space-y-2.5 lg:hidden">
             <div className="flex items-center justify-between">
@@ -264,9 +267,6 @@ export function AdminSidebar({
             </button>
           </div>
         )}
-
-        {/* Componente de Logout Isolado */}
-        <LogoutButton sidebarOpen={sidebarOpen} />
       </div>
     </aside>
   );

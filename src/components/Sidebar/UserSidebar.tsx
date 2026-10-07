@@ -212,7 +212,7 @@ export function UserSidebar({
               {sidebarOpen && <span>Configurações</span>}
             </NavLink>
 
-            {/* BOTÃO DE INSTALAÇÃO DO PWA (Logo abaixo de Configurações) */}
+            {/* BOTÃO DE INSTALAÇÃO DO PWA */}
             {showInstallBtn && sidebarOpen && (
               <button
                 onClick={handleInstallClick}
@@ -240,11 +240,20 @@ export function UserSidebar({
               <HelpCircle size={20} className="shrink-0" />
               {sidebarOpen && <span>Suporte</span>}
             </NavLink>
+
+            {/* Botão Sair reposicionado logo aqui dentro, seguindo o padrão admin */}
+            <NavLink
+              to="/"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              <LogOut size={20} className="shrink-0" />
+              {sidebarOpen && <span>Sair</span>}
+            </NavLink>
           </nav>
         </div>
       </div>
 
-      {/* Rodapé da Sidebar */}
+      {/* Rodapé da Sidebar (Apenas controles de tema/aparência) */}
       <div className="p-3 border-t border-zinc-500/15 space-y-3">
         {sidebarOpen ? (
           <div className="p-3 rounded-xl bg-zinc-500/5 border border-zinc-500/10 space-y-2.5 lg:hidden">
@@ -295,15 +304,9 @@ export function UserSidebar({
             </button>
           </div>
         )}
-
-        <NavLink
-          to="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-red-400 hover:bg-red-500/10 transition-colors"
-        >
-          <LogOut size={20} className="shrink-0" />
-          {sidebarOpen && <span>Sair</span>}
-        </NavLink>
       </div>
     </aside>
   );
 }
+
+export default UserSidebar;
