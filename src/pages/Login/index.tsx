@@ -141,7 +141,7 @@ export function Login() {
             <div className="mt-4 mb-4 flex items-center justify-center min-h-[4rem]">
               {logoPadrao ? (
                 <img
-                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:3333'}${logoPadrao.startsWith('/') ? '' : '/'}${logoPadrao}`}
+                  src={`${(import.meta.env.VITE_API_URL || 'http://localhost:3333').replace(/\/$/, '')}/${logoPadrao.replace(/^\//, '')}`}
                   alt="Logo"
                   className="w-50 object-contain"
                 />

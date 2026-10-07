@@ -68,7 +68,7 @@ export function AdminSidebar({
           <div className="flex items-center justify-center shrink-0 w-40 h-10 text-white">
             {logoPadrao ? (
               <img
-                src={`${import.meta.env.VITE_API_URL || 'http://localhost:3333'}${logoPadrao.startsWith('/') ? '' : '/'}${logoPadrao}`}
+                src={`${(import.meta.env.VITE_API_URL || 'http://localhost:3333').replace(/\/$/, '')}/${logoPadrao.replace(/^\//, '')}`}
                 alt="Logo"
                 className={`h-full object-contain transition-all ${
                   sidebarOpen ? 'block w-40' : 'hidden'

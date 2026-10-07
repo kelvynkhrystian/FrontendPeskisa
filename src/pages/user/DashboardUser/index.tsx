@@ -51,7 +51,7 @@ export function DashboardUser() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* HEADER CENTRALIZADO */}
         <Header
-          title="Painel do Entrevistador"
+          title="Painel"
           setMobileMenuOpen={setMobileMenuOpen}
           notificationCount={1}
         />

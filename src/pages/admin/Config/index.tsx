@@ -105,8 +105,20 @@ export function Config() {
   const getImageUrl = (path: string | null) => {
     if (!path) return null;
     if (path.startsWith('blob:')) return path;
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333';
-    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+
+    // Pega a URL base
+    let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3333';
+
+    // 1. Remove a barra do final do baseUrl (se existir)
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+
+    // 2. Garante que o path sempre comece com uma barra
+    const safePath = path.startsWith('/') ? path : `/${path}`;
+
+    // Retorno limpo e sem barras duplas!
+    return `${baseUrl}${safePath}`;
   };
 
   // Manipulador de seleção de arquivos de imagem com preview instantâneo

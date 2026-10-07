@@ -39,7 +39,7 @@ export function Dashboard() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* HEADER CENTRALIZADO */}
         <Header
-          title="Painel de Monitoramento"
+          title="Painel"
           setMobileMenuOpen={setMobileMenuOpen}
           notificationCount={3}
         />
