@@ -5,7 +5,7 @@ import { UserSidebar } from '../../../components/Sidebar/UserSidebar';
 import { Header } from '../../../components/Header/Header';
 import { pesquisaService } from '../../../services/pesquisaService';
 import { api } from '../../../services/api';
-import { dbLocal } from '../../../services/dbLocal'; // IMPORTAMOS O BANCO LOCAL
+import { dbLocal } from '../../../services/dbLocal';
 import toast, { Toaster } from 'react-hot-toast';
 import {
   FileText,
@@ -39,6 +39,11 @@ export function PesquisasUser() {
   const [pesquisas, setPesquisas] = useState<Pesquisa[]>([]);
   const [busca, setBusca] = useState('');
   const [loading, setLoading] = useState(true);
+  const { nomeApp } = useTheme();
+
+  useEffect(() => {
+    document.title = `Pesquisas - ${nomeApp || 'Peskisa'}`;
+  }, [nomeApp]);
 
   useEffect(() => {
     loadPesquisasDoUsuario();

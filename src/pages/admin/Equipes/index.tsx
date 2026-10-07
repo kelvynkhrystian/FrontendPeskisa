@@ -77,6 +77,12 @@ export function Equipes() {
     equipe_id: '',
   });
 
+  const { nomeApp } = useTheme();
+
+  useEffect(() => {
+    document.title = `Equipes - ${nomeApp || 'Peskisa'}`;
+  }, [nomeApp]);
+
   useEffect(() => {
     async function loadData() {
       try {

@@ -1,7 +1,13 @@
+import { useEffect } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 export function Relatorio() {
   const { theme } = useTheme();
+  const { nomeApp } = useTheme();
+
+  useEffect(() => {
+    document.title = `Pesquisas - ${nomeApp || 'Peskisa'}`;
+  }, [nomeApp]);
 
   return (
     <div className="space-y-6">

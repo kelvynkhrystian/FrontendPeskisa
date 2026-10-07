@@ -25,6 +25,11 @@ export function EnviosUser() {
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [sincronizando, setSincronizando] = useState(false);
+  const { nomeApp } = useTheme();
+
+  useEffect(() => {
+    document.title = `Envios - ${nomeApp || 'Peskisa'}`;
+  }, [nomeApp]);
 
   useEffect(() => {
     // Monitora o estado da internet em tempo real

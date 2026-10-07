@@ -107,6 +107,12 @@ export function Pesquisas() {
     titulo: string;
   }>({ isOpen: false, type: null, id: null, titulo: '' });
 
+  const { nomeApp } = useTheme();
+
+  useEffect(() => {
+    document.title = `Pesquisas - ${nomeApp || 'Peskisa'}`;
+  }, [nomeApp]);
+
   useEffect(() => {
     loadData();
   }, []);
