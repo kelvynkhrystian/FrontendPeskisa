@@ -361,7 +361,7 @@ export function Config() {
               }}
             >
               <InfoIcon size={16} />
-              <span>Informações</span>
+              <span>Info</span>
             </button>
           </div>
 
