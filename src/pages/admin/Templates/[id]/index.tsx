@@ -92,10 +92,9 @@ export function DetalhesTemplate() {
     try {
       const resTemplates = await api.get('/api/templates-perguntas');
       const listaTemplates =
-        resTemplates.data.templates || resTemplates.data || [];
+        resTemplates.data?.templates || resTemplates.data || [];
       const encontrado = listaTemplates.find((t: any) => t.id === Number(id));
 
-      // Mapeia corretamente o título e a descrição reais vindos da base de dados
       setTemplate(
         encontrado || {
           id,
@@ -112,7 +111,8 @@ export function DetalhesTemplate() {
 
       try {
         const opcoesRes = await perguntaOpcaoService.getAll();
-        const todasOpcoes = opcoesRes.opcoes || opcoesRes || [];
+        const todasOpcoes =
+          opcoesRes.opcoes || opcoesRes.data?.opcoes || opcoesRes || [];
 
         filtradas.forEach((p: PerguntaTemplate) => {
           p.opcoes = todasOpcoes
@@ -374,20 +374,18 @@ export function DetalhesTemplate() {
     }
 
     try {
-      // 1. Busca todas as perguntas que já estão na pesquisa de destino
       const resPesq = await perguntaService.getAll({
         pesquisa_id: pesquisaSelecionadaId,
       });
-      const perguntasDestino = resPesq.perguntas || resPesq || [];
+      const perguntasDestino =
+        resPesq.perguntas || resPesq.data?.perguntas || resPesq || [];
 
-      // Ordena as perguntas atuais da pesquisa pela ordem delas
       const existentesOrdenadas = perguntasDestino.sort(
         (a: any, b: any) => (a.ordem || 0) - (b.ordem || 0)
       );
 
       if (posicaoInsercao === 'inicio') {
-        // SE FOR NO INÍCIO:
-        // Desloca todas as perguntas existentes para a frente (somando a quantidade de perguntas do template)
+        // Desloca as existentes para a frente
         for (let i = 0; i < existentesOrdenadas.length; i++) {
           const pExistente = existentesOrdenadas[i];
           const novaOrdemExistente = perguntas.length + i + 1;
@@ -395,66 +393,69 @@ export function DetalhesTemplate() {
             ordem: novaOrdemExistente,
           });
         }
+      }
 
-        // Insere as perguntas do template nas posições 1, 2, 3...
-        for (let i = 0; i < perguntas.length; i++) {
-          const pOrig = perguntas[i];
-          const novaOrdemTemplate = i + 1;
+      const ultimaOrdemExistente =
+        existentesOrdenadas.length > 0
+          ? Math.max(...existentesOrdenadas.map((p: any) => p.ordem || 0))
+          : 0;
 
-          const novaPRes = await perguntaService.create({
-            titulo: pOrig.titulo,
-            descricao: 'sem descrição',
-            tipo: pOrig.tipo,
-            obrigatoria: pOrig.obrigatoria ?? 1,
-            pesquisa_id: Number(pesquisaSelecionadaId),
-            template_id: null,
-            ordem: novaOrdemTemplate,
+      // Injeta as perguntas do template
+      for (let i = 0; i < perguntas.length; i++) {
+        const pOrig = perguntas[i];
+        const novaOrdem =
+          posicaoInsercao === 'inicio' ? i + 1 : ultimaOrdemExistente + i + 1;
+
+        const novaPRes = await perguntaService.create({
+          titulo: pOrig.titulo,
+          descricao: 'sem descrição',
+          tipo: pOrig.tipo,
+          obrigatoria: pOrig.obrigatoria ?? 1,
+          pesquisa_id: Number(pesquisaSelecionadaId),
+          template_id: null,
+          ordem: novaOrdem,
+          escala_max: pOrig.escala_max, // Garante que a escala vai junto
+        });
+
+        // 🚨 TENTATIVA BLINDADA DE OBTER O ID
+        let novaId =
+          novaPRes?.id ||
+          novaPRes?.pergunta?.id ||
+          novaPRes?.data?.id ||
+          novaPRes?.data?.pergunta?.id;
+
+        // 🚨 FALLBACK: Se o ID não veio direto do backend, busca a última criada
+        if (!novaId) {
+          const fallbackRes = await perguntaService.getAll({
+            pesquisa_id: pesquisaSelecionadaId,
           });
+          const listaFallback =
+            fallbackRes.perguntas ||
+            fallbackRes.data?.perguntas ||
+            fallbackRes ||
+            [];
 
-          const novaId =
-            novaPRes.id || novaPRes.pergunta?.id || novaPRes.data?.id;
-          if (novaId && pOrig.opcoes) {
-            for (const op of pOrig.opcoes) {
-              await perguntaOpcaoService.create({
-                pergunta_id: novaId,
-                opcao_texto: op.opcao_texto,
-                ordem: op.ordem || 1,
-              });
-            }
+          const resgatada = listaFallback
+            .filter(
+              (p: any) =>
+                Number(p.pesquisa_id) === Number(pesquisaSelecionadaId)
+            )
+            .sort((a: any, b: any) => b.id - a.id)[0];
+
+          if (resgatada && resgatada.id) {
+            novaId = resgatada.id;
           }
         }
-      } else {
-        // SE FOR NO FIM:
-        // Mantém as existentes onde estão e insere as do template logo após a última existente
-        const ultimaOrdemExistente =
-          existentesOrdenadas.length > 0
-            ? Math.max(...existentesOrdenadas.map((p: any) => p.ordem || 0))
-            : 0;
 
-        for (let i = 0; i < perguntas.length; i++) {
-          const pOrig = perguntas[i];
-          let novaOrdem = ultimaOrdemExistente + i + 1;
-
-          const novaPRes = await perguntaService.create({
-            titulo: pOrig.titulo,
-            descricao: 'sem descrição',
-            tipo: pOrig.tipo,
-            obrigatoria: pOrig.obrigatoria ?? 1,
-            pesquisa_id: Number(pesquisaSelecionadaId),
-            template_id: null,
-            ordem: novaOrdem,
-          });
-
-          const novaId =
-            novaPRes.id || novaPRes.pergunta?.id || novaPRes.data?.id;
-          if (novaId && pOrig.opcoes) {
-            for (const op of pOrig.opcoes) {
-              await perguntaOpcaoService.create({
-                pergunta_id: novaId,
-                opcao_texto: op.opcao_texto,
-                ordem: op.ordem || 1,
-              });
-            }
+        // 🚨 Só insere as opções se encontrar o ID com sucesso
+        if (novaId && pOrig.opcoes && pOrig.opcoes.length > 0) {
+          for (let j = 0; j < pOrig.opcoes.length; j++) {
+            const op = pOrig.opcoes[j];
+            await perguntaOpcaoService.create({
+              pergunta_id: novaId,
+              opcao_texto: op.opcao_texto,
+              ordem: op.ordem || j + 1,
+            });
           }
         }
       }
@@ -519,7 +520,6 @@ export function DetalhesTemplate() {
             <span>Voltar para Pesquisas</span>
           </button>
 
-          {/* Cabeçalho do Template puxando o título e a descrição reais */}
           <div
             className={`p-6 md:p-8 rounded-2xl border shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6 ${theme === 'dark' ? 'bg-[#1a1a1e] border-[#29292e]' : 'bg-white border-zinc-200'}`}
           >
@@ -554,7 +554,6 @@ export function DetalhesTemplate() {
             </button>
           </div>
 
-          {/* Secção de Perguntas */}
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-center pt-4">
             <div className="flex items-center gap-2">
               <Layers size={20} style={{ color: 'var(--primary-color)' }} />
@@ -572,7 +571,6 @@ export function DetalhesTemplate() {
             </button>
           </div>
 
-          {/* Lista de Perguntas */}
           <div className="space-y-4">
             {perguntas.length === 0 ? (
               <div
@@ -608,7 +606,6 @@ export function DetalhesTemplate() {
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {/* Exibe rigorosamente a ordem sequencial limpa baseada no índice index + 1 */}
                         <span className="text-xs font-bold px-2 py-0.5 rounded bg-zinc-500/10 text-zinc-400">
                           #{index + 1}
                         </span>
@@ -654,7 +651,6 @@ export function DetalhesTemplate() {
         </main>
       </div>
 
-      {/* Modal Adicionar / Editar Pergunta */}
       {isPerguntaModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div
@@ -802,7 +798,6 @@ export function DetalhesTemplate() {
         </div>
       )}
 
-      {/* Modal Injetar na Pesquisa */}
       {isInjectModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div

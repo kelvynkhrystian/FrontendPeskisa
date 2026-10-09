@@ -12,6 +12,7 @@ import { DetalhesPesquisa } from '../pages/admin/Pesquisas/[id]';
 import { DetalhesTemplate } from '../pages/admin/Templates/[id]';
 import { RelatoriosList } from '../pages/admin/Relatorio/index';
 import { DetalhesRelatorio } from '../pages/admin/Relatorio/[id]/index';
+import { RelatorioInfo } from '../pages/admin/Relatorio/[id]/info';
 import { Equipes } from '../pages/admin/Equipes';
 import { Config } from '../pages/admin/Config';
 
@@ -90,6 +91,10 @@ export const router = createBrowserRouter([
       {
         path: '/admin/relatorios/:id',
         element: <DetalhesRelatorio />,
+      },
+      {
+        path: '/admin/relatorios/:id/info',
+        element: <RelatorioInfo />,
       },
       {
         path: '/admin/equipes',
