@@ -327,7 +327,6 @@ export function DetalhesRelatorio() {
   }, [filtroAtivo]);
 
   // Função para Ocultar TODAS as Perguntas de Filtro/Demográficas do relatório
-  // const isPerguntaRedundante = (perguntaId: number, perguntaTitulo: string) => {
   const isPerguntaRedundante = (perguntaTitulo: string) => {
     const t = normalizeStr(perguntaTitulo);
     if (
@@ -773,8 +772,7 @@ export function DetalhesRelatorio() {
       // 1. EXTRAIR OS NOMES DOS GRUPOS
       const nomesGrupos: string[] = [];
       Object.entries(pdfGroupedByCategory).forEach(
-        // ([catName, grupos]: [string, any]) => {
-        ([grupos]: [string, any]) => {
+        ([catName, grupos]: [string, any]) => {
           grupos.forEach((g: any) => {
             nomesGrupos.push(g.nome);
           });
