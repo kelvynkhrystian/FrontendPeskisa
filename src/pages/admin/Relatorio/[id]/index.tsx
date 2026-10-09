@@ -245,7 +245,8 @@ export function DetalhesRelatorio() {
   }
 
   // Identificação Demográfica nas Perguntas
-  const { demografiaIds, perfisPorSessao, opcoesDemograficas } = useMemo(() => {
+  // const { demografiaIds, perfisPorSessao, opcoesDemograficas } = useMemo(() => {
+  const { perfisPorSessao, opcoesDemograficas } = useMemo(() => {
     const ids: Record<string, number> = {};
     perguntas.forEach((p) => {
       const t = normalizeStr(p.titulo);
@@ -326,7 +327,8 @@ export function DetalhesRelatorio() {
   }, [filtroAtivo]);
 
   // Função para Ocultar TODAS as Perguntas de Filtro/Demográficas do relatório
-  const isPerguntaRedundante = (perguntaId: number, perguntaTitulo: string) => {
+  // const isPerguntaRedundante = (perguntaId: number, perguntaTitulo: string) => {
+  const isPerguntaRedundante = (perguntaTitulo: string) => {
     const t = normalizeStr(perguntaTitulo);
     if (
       t.includes('logradouro') ||
@@ -771,7 +773,8 @@ export function DetalhesRelatorio() {
       // 1. EXTRAIR OS NOMES DOS GRUPOS
       const nomesGrupos: string[] = [];
       Object.entries(pdfGroupedByCategory).forEach(
-        ([catName, grupos]: [string, any]) => {
+        // ([catName, grupos]: [string, any]) => {
+        ([grupos]: [string, any]) => {
           grupos.forEach((g: any) => {
             nomesGrupos.push(g.nome);
           });
@@ -1102,7 +1105,7 @@ export function DetalhesRelatorio() {
                                 <div
                                   className={`space-y-4 ${isSplit ? '' : 'pl-0 md:pl-11'}`}
                                 >
-                                  {resultado.opcoes.map(
+                                  {resultado?.opcoes?.map(
                                     (opcao: any, i: number) => {
                                       if (isSplit) {
                                         return (
@@ -1114,7 +1117,7 @@ export function DetalhesRelatorio() {
                                               {opcao.texto}
                                             </div>
                                             <div className="flex-1 flex flex-col gap-1.5">
-                                              {resultado.splitValues.map(
+                                              {resultado?.splitValues?.map(
                                                 (sv: string) => {
                                                   const pct =
                                                     opcao.splits[sv]
@@ -1427,85 +1430,87 @@ export function DetalhesRelatorio() {
                             <div
                               className={`space-y-4 ${isSplit ? '' : 'pl-0 md:pl-11'}`}
                             >
-                              {resultado.opcoes.map((opcao: any, i: number) => {
-                                if (isSplit) {
-                                  return (
-                                    <div
-                                      key={i}
-                                      className="flex items-center gap-4 mb-3"
-                                    >
-                                      <div className="w-1/3 md:w-1/4 font-bold text-sm uppercase leading-tight print:text-black">
-                                        {opcao.texto}
-                                      </div>
-                                      <div className="flex-1 flex flex-col gap-1.5">
-                                        {resultado.splitValues.map(
-                                          (sv: string) => {
-                                            const pct =
-                                              opcao.splits[sv]?.porcentagem ||
-                                              0;
-                                            const colorHex =
-                                              normalizeStr(sv) === 'masculino'
-                                                ? '#15803d'
-                                                : normalizeStr(sv) ===
-                                                    'feminino'
-                                                  ? '#f97316'
-                                                  : '#3b82f6';
-                                            return (
-                                              <div
-                                                key={sv}
-                                                className="flex items-center gap-3"
-                                              >
-                                                <div className="flex-1 h-3.5 bg-zinc-200 dark:bg-zinc-800 rounded-sm overflow-hidden print:border print:border-zinc-300">
-                                                  <div
-                                                    className="h-full rounded-sm transition-all"
-                                                    style={{
-                                                      width: `${pct}%`,
-                                                      backgroundColor:
-                                                        pct > 0
-                                                          ? colorHex
-                                                          : 'transparent',
-                                                    }}
-                                                  />
-                                                </div>
-                                                <div className="w-12 text-right font-bold text-sm print:text-black">
-                                                  {pct}%
-                                                </div>
-                                              </div>
-                                            );
-                                          }
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                } else {
-                                  const pctGeral =
-                                    opcao.splits['Geral']?.porcentagem || 0;
-                                  return (
-                                    <div key={i} className="space-y-1.5">
-                                      <div className="flex justify-between items-end text-sm">
-                                        <span className="font-medium print:text-black">
-                                          {opcao.texto}
-                                        </span>
-                                        <span className="font-bold text-zinc-500 text-xs print:text-black">
-                                          {pctGeral}%
-                                        </span>
-                                      </div>
+                              {resultado?.opcoes?.map(
+                                (opcao: any, i: number) => {
+                                  if (isSplit) {
+                                    return (
                                       <div
-                                        className={`w-full h-3 rounded-full overflow-hidden print:border print:border-zinc-300 ${theme === 'dark' ? 'bg-[#29292e]' : 'bg-zinc-200'}`}
+                                        key={i}
+                                        className="flex items-center gap-4 mb-3"
                                       >
-                                        <div
-                                          className="h-full rounded-full transition-all duration-1000 ease-out print:!bg-orange-500"
-                                          style={{
-                                            width: `${pctGeral}%`,
-                                            backgroundColor:
-                                              'var(--primary-color)',
-                                          }}
-                                        />
+                                        <div className="w-1/3 md:w-1/4 font-bold text-sm uppercase leading-tight print:text-black">
+                                          {opcao.texto}
+                                        </div>
+                                        <div className="flex-1 flex flex-col gap-1.5">
+                                          {resultado?.splitValues?.map(
+                                            (sv: string) => {
+                                              const pct =
+                                                opcao.splits[sv]?.porcentagem ||
+                                                0;
+                                              const colorHex =
+                                                normalizeStr(sv) === 'masculino'
+                                                  ? '#15803d'
+                                                  : normalizeStr(sv) ===
+                                                      'feminino'
+                                                    ? '#f97316'
+                                                    : '#3b82f6';
+                                              return (
+                                                <div
+                                                  key={sv}
+                                                  className="flex items-center gap-3"
+                                                >
+                                                  <div className="flex-1 h-3.5 bg-zinc-200 dark:bg-zinc-800 rounded-sm overflow-hidden print:border print:border-zinc-300">
+                                                    <div
+                                                      className="h-full rounded-sm transition-all"
+                                                      style={{
+                                                        width: `${pct}%`,
+                                                        backgroundColor:
+                                                          pct > 0
+                                                            ? colorHex
+                                                            : 'transparent',
+                                                      }}
+                                                    />
+                                                  </div>
+                                                  <div className="w-12 text-right font-bold text-sm print:text-black">
+                                                    {pct}%
+                                                  </div>
+                                                </div>
+                                              );
+                                            }
+                                          )}
+                                        </div>
                                       </div>
-                                    </div>
-                                  );
+                                    );
+                                  } else {
+                                    const pctGeral =
+                                      opcao.splits['Geral']?.porcentagem || 0;
+                                    return (
+                                      <div key={i} className="space-y-1.5">
+                                        <div className="flex justify-between items-end text-sm">
+                                          <span className="font-medium print:text-black">
+                                            {opcao.texto}
+                                          </span>
+                                          <span className="font-bold text-zinc-500 text-xs print:text-black">
+                                            {pctGeral}%
+                                          </span>
+                                        </div>
+                                        <div
+                                          className={`w-full h-3 rounded-full overflow-hidden print:border print:border-zinc-300 ${theme === 'dark' ? 'bg-[#29292e]' : 'bg-zinc-200'}`}
+                                        >
+                                          <div
+                                            className="h-full rounded-full transition-all duration-1000 ease-out print:!bg-orange-500"
+                                            style={{
+                                              width: `${pctGeral}%`,
+                                              backgroundColor:
+                                                'var(--primary-color)',
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    );
+                                  }
                                 }
-                              })}
+                              )}
                             </div>
                           )}
 
