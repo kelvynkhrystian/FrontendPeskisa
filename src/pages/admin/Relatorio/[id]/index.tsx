@@ -671,7 +671,7 @@ export function DetalhesRelatorio() {
   );
 
   const perguntasVisiveis = perguntas.filter(
-    (p) => !isPerguntaRedundante(p.id, p.titulo)
+    (p) => !isPerguntaRedundante(p.titulo)
   );
 
   // =========================================================================
