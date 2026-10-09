@@ -345,7 +345,7 @@ export function DetalhesRelatorio() {
     return false;
   };
 
-  // Cálculo Estatístico Blindado com verificação robusta de múltiplos gêneros
+  // Cálculo Estatístico Blindado com verificação robusta de múltiplos géneros (Base Global a 100%)
   const calcularEstatisticasPergunta = (
     pergunta: Pergunta,
     baseRespostas: any[],
@@ -355,7 +355,7 @@ export function DetalhesRelatorio() {
     const respostasDaPergunta = baseRespostas.filter(
       (r: any) => Number(r.pergunta_id) === Number(pergunta.id)
     );
-    const totalVotos = respostasDaPergunta.length;
+    const totalVotos = respostasDaPergunta.length; // <-- A nossa base global de 100%
 
     let splitValues = ['Geral'];
     if (splitKey && perfis) {
@@ -372,7 +372,7 @@ export function DetalhesRelatorio() {
         if (b.toLowerCase() === 'feminino') return 1;
         return a.localeCompare(b);
       });
-      // Blindagem central: Se houver menos de 2 gêneros, força 'Geral' (barra única)
+      // Blindagem central: Se houver menos de 2 géneros, força 'Geral' (barra única)
       splitValues = arr.length > 1 ? arr : ['Geral'];
     }
 
@@ -436,15 +436,15 @@ export function DetalhesRelatorio() {
             } catch (e) {}
           });
 
-          const totalOpcao = contagemVerdadeiro + contagemFalso;
+          // MUDANÇA AQUI: Usa-se o `totalVotos` global em vez da variável totalOpcao que limitava aos votos do género
           splitsData[sv] = {
             verdadeiro:
-              totalOpcao > 0
-                ? Number(((contagemVerdadeiro / totalOpcao) * 100).toFixed(1))
+              totalVotos > 0
+                ? Number(((contagemVerdadeiro / totalVotos) * 100).toFixed(1))
                 : 0,
             falso:
-              totalOpcao > 0
-                ? Number(((contagemFalso / totalOpcao) * 100).toFixed(1))
+              totalVotos > 0
+                ? Number(((contagemFalso / totalVotos) * 100).toFixed(1))
                 : 0,
           };
         });
@@ -505,31 +505,32 @@ export function DetalhesRelatorio() {
       return { texto: opcao.opcao_texto, splits: splitsData };
     });
 
+    // MUDANÇA AQUI: Cálculo da base de forma centralizada e independente para garantir os 100% no geral
+    let baseCalculoGlobal = totalVotos;
+
+    // Se for de seleção múltipla, a base tem de ser o total de seleções conjuntas feitas globalmente (não localmente)
+    if (pergunta.tipo === 'multipla_multipla') {
+      baseCalculoGlobal = opcoesCalculadas.reduce(
+        (acc, curr) =>
+          acc +
+          splitValues.reduce(
+            (sum, s) => sum + (curr.splits[s]?.contagem || 0),
+            0
+          ),
+        0
+      );
+    }
+
     splitValues.forEach((sv) => {
-      const respsDoSplit =
-        splitKey && sv !== 'Geral'
-          ? respostasDaPergunta.filter(
-              (r) =>
-                normalizeStr(perfis[r.sessao_id]?.[splitKey]) ===
-                normalizeStr(sv)
-            )
-          : respostasDaPergunta;
-      const totalDoSplit = respsDoSplit.length;
-      let baseCalculo = totalDoSplit;
-      if (pergunta.tipo === 'multipla_multipla') {
-        baseCalculo = opcoesCalculadas.reduce(
-          (acc, curr) => acc + (curr.splits[sv]?.contagem || 0),
-          0
-        );
-      }
       opcoesCalculadas.forEach((opcao) => {
         if (!opcao.splits[sv])
           opcao.splits[sv] = { contagem: 0, porcentagem: 0 };
+
         opcao.splits[sv].porcentagem =
-          baseCalculo > 0
+          baseCalculoGlobal > 0
             ? Number(
                 (
-                  ((opcao.splits[sv]?.contagem || 0) / baseCalculo) *
+                  ((opcao.splits[sv]?.contagem || 0) / baseCalculoGlobal) *
                   100
                 ).toFixed(1)
               )
