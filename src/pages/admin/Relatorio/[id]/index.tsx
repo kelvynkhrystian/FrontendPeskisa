@@ -772,7 +772,7 @@ export function DetalhesRelatorio() {
       // 1. EXTRAIR OS NOMES DOS GRUPOS
       const nomesGrupos: string[] = [];
       Object.entries(pdfGroupedByCategory).forEach(
-        ([catName, grupos]: [string, any]) => {
+        ([_, grupos]: [string, any]) => {
           grupos.forEach((g: any) => {
             nomesGrupos.push(g.nome);
           });
